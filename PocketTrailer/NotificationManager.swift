@@ -277,6 +277,10 @@ final class NotificationManager: NSObject {
             }
         }
 
+        #if os(macOS)
+            notification.sound = .default
+        #endif
+
         notification.userInfo = DataManager.info(for: item)
 
         let attachmentUrl = Settings.hideAvatarsInNotifications ? nil :
