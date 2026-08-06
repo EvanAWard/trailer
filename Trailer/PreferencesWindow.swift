@@ -215,6 +215,10 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     /// Tabs
     @IBOutlet var tabs: NSTabView!
 
+    /// Notifications
+    @IBOutlet private var notificationSoundsContainer: NSView!
+    private var notificationSoundsPane: NotificationSoundsPane?
+
     @MainActor
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -227,6 +231,8 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
         reloadSettings()
 
         versionNumber.stringValue = versionString
+
+        notificationSoundsPane = NotificationSoundsPane(container: notificationSoundsContainer)
 
         let selectedIndex = min(tabs.numberOfTabViewItems - 1, Settings.lastPreferencesTabSelectedOSX)
         tabs.selectTabViewItem(tabs.tabViewItem(at: selectedIndex))
@@ -754,6 +760,8 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
         updateActivity()
 
         updateRepoAdding()
+
+        notificationSoundsPane?.reload()
     }
 
     private func updateRepoAdding() {

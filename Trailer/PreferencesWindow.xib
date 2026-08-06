@@ -2122,6 +2122,12 @@ Tip: Reactions are treated like comments, i.e. the rules about being notified on
                                     </subviews>
                                 </view>
                             </tabViewItem>
+                            <tabViewItem label="Notifications" identifier="" id="Nt1-So-un1">
+                                <view key="view" id="Nt2-So-un2">
+                                    <rect key="frame" x="10" y="33" width="898" height="426"/>
+                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                </view>
+                            </tabViewItem>
                             <tabViewItem label="Snooze" identifier="" id="ebR-tY-siH">
                                 <view key="view" id="zff-sZ-c5n">
                                     <rect key="frame" x="10" y="33" width="898" height="426"/>
@@ -3014,6 +3020,7 @@ in System Preferences -&gt; Security -&gt; Privacy.  Restart Trailer for the per
                 <outlet property="statusTermMenu" destination="irr-Zv-gfS" id="Aoi-h9-I2e"/>
                 <outlet property="statusTermsField" destination="oW9-uY-e0m" id="xZo-19-rE2"/>
                 <outlet property="supportReviews" destination="7m1-w3-6Le" id="DWw-Ai-Sb9"/>
+                <outlet property="notificationSoundsContainer" destination="Nt2-So-un2" id="Nt3-So-un3"/>
                 <outlet property="tabs" destination="RGK-bv-JXB" id="B5b-gW-VDa"/>
                 <outlet property="teamMentionMovePolicy" destination="gM2-vc-gT5" id="ZPB-jw-m7v"/>
                 <outlet property="v4ApiSwitch" destination="7V9-LT-Yjg" id="3qv-tI-fGl"/>
