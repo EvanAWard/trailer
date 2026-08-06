@@ -8,14 +8,37 @@ Trailer: a GitHub pull-request/issue monitor. One Xcode project (`Trailer.xcodep
 menu-bar app, an iOS/iPadOS app, a watchOS app, and a macOS login-item helper, all on top of one shared
 Core Data + sync core. This repo is a fork of `ptsochantaris/trailer` (`origin` is `EvanAWard/trailer`).
 
+## Scope: macOS only
+
+**Work on the macOS app only.** This is the standing default for every task in this repo. The user does
+not repeat it, so do not ask for it and do not treat its absence as permission to widen the scope.
+
+- In scope: the `Trailer` and `TrailerLauncher` targets, plus the macOS half of `Shared/`.
+- Out of scope: the `PocketTrailer` (iOS) and `PocketTrailer WatchKit App` (watchOS) targets, and all
+  files under `PocketTrailer/` and `PocketTrailer WatchKit App/`.
+- Do not build, run, test or change the out-of-scope targets. Do not put iOS or watchOS work in a plan,
+  a report or a list of "next steps".
+- In `Shared/`, the `#if os(iOS)` and watch-only branches are out of scope. Read them only to understand
+  the macOS branch.
+- If you find a problem in iOS or watchOS code, do not correct it. Tell the user in one line if the
+  problem is serious, then continue the macOS work.
+- **But shared code must stay correct.** Files in `Shared/` compile into the iOS and watch targets too.
+  When a macOS change touches a shared file, keep the other targets compiling. Do not delete or change a
+  declaration only because the macOS target does not use it.
+- Widen the scope only when the user asks for iOS or watchOS work in that message. The permission applies
+  to that task only.
+
+The sections below describe all four platforms, because shared code makes that context necessary. Use the
+iOS and watchOS parts for understanding only.
+
 ## Commands
 
 ```sh
 # macOS app
 xcodebuild -project Trailer.xcodeproj -scheme Trailer -destination 'platform=macOS' build
 
-# iOS app (embeds the watch app)
-xcodebuild -project Trailer.xcodeproj -scheme PocketTrailer -destination 'generic/platform=iOS' build
+# iOS app (embeds the watch app) — OUT OF SCOPE, listed only so you recognise it. Do not run it.
+# xcodebuild -project Trailer.xcodeproj -scheme PocketTrailer -destination 'generic/platform=iOS' build
 
 swiftlint            # config: .swiftlint.yml (run from repo root)
 swiftlint analyze    # needed for the `explicit_self` rule, which is an analyzer rule
@@ -43,10 +66,10 @@ Notes that will save you a cycle:
 
 | Target | Notes |
 |---|---|
-| `Trailer` | macOS menu-bar app. `LSUIElement`, XIB-based UI, Sparkle auto-update. |
-| `TrailerLauncher` | Tiny macOS helper embedded in `Trailer.app`, used for launch-at-login. |
-| `PocketTrailer` | iOS/iPadOS app, storyboard-based. |
-| `PocketTrailer WatchKit App` | watchOS app. Thin client — no database of its own. |
+| `Trailer` | **In scope.** macOS menu-bar app. `LSUIElement`, XIB-based UI, Sparkle auto-update. |
+| `TrailerLauncher` | **In scope.** Tiny macOS helper embedded in `Trailer.app`, used for launch-at-login. |
+| `PocketTrailer` | *Out of scope.* iOS/iPadOS app, storyboard-based. |
+| `PocketTrailer WatchKit App` | *Out of scope.* watchOS app. Thin client — no database of its own. |
 
 There is **no shared framework**. Files in `Shared/` (plus root-level `Logging.swift`, `ImageCache.swift`)
 are compiled into each target by direct membership in that target's Sources build phase. **Adding a file
