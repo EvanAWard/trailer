@@ -83,3 +83,58 @@ enum NotificationSound: Equatable {
             .map { .named($0) }
     }
 }
+
+extension NotificationType {
+    /** The heading under which the preferences show a kind of notification. */
+    enum Group: CaseIterable {
+        case comments, pullRequests, issues, reviews, statuses, repositories
+
+        var title: String {
+            switch self {
+            case .comments: "Comments"
+            case .pullRequests: "Pull requests"
+            case .issues: "Issues"
+            case .reviews: "Reviews"
+            case .statuses: "Statuses"
+            case .repositories: "Repositories"
+            }
+        }
+    }
+
+    /** The text that labels the row in the preferences. It is not the title of the notification. */
+    var title: String {
+        switch self {
+        case .newComment: "Comment"
+        case .newMention: "Mention"
+        case .newReaction: "Reaction"
+        case .newPr: "New PR"
+        case .prReopened: "Re-Opened PR"
+        case .prMerged: "Merged PR"
+        case .prClosed: "Closed PR"
+        case .newPrAssigned: "PR Assigned"
+        case .newIssue: "New Issue"
+        case .issueReopened: "Re-Opened Issue"
+        case .issueClosed: "Closed Issue"
+        case .newIssueAssigned: "Issue Assigned"
+        case .assignedForReview: "Review Requested"
+        case .assignedToTeamForReview: "Team Review Requested"
+        case .changesApproved: "Changes Approved"
+        case .changesRequested: "Changes Requested"
+        case .changesDismissed: "Review Dismissed"
+        case .newStatus: "PR Status Update"
+        case .newRepoSubscribed: "New Repo Subscribed"
+        case .newRepoAnnouncement: "New Repository"
+        }
+    }
+
+    var group: Group {
+        switch self {
+        case .newComment, .newMention, .newReaction: .comments
+        case .newPr, .prReopened, .prMerged, .prClosed, .newPrAssigned: .pullRequests
+        case .newIssue, .issueReopened, .issueClosed, .newIssueAssigned: .issues
+        case .assignedForReview, .assignedToTeamForReview, .changesApproved, .changesRequested, .changesDismissed: .reviews
+        case .newStatus: .statuses
+        case .newRepoSubscribed, .newRepoAnnouncement: .repositories
+        }
+    }
+}
