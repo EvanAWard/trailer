@@ -575,11 +575,11 @@ class ListableItem: DataItem, Listable {
                 if labelFilterList.isDisjoint(with: mine) {
                     return .doesntContainLabel
                 }
-            case .excludeIfAll:
+            case .excludeIfEvery:
                 if labelFilterList.isSubset(of: mine) {
                     return .containsAllLabels
                 }
-            case .includeIfAll:
+            case .includeIfEvery:
                 if !labelFilterList.isSubset(of: mine) {
                     return .doesntContainAllLabels
                 }
@@ -590,11 +590,11 @@ class ListableItem: DataItem, Listable {
         if !authorFilterList.isEmpty,
            let login = userLogin?.comparableForm {
             switch settings.authorsIncludionRule {
-            case .excludeIfAll, .excludeIfAny:
+            case .excludeIfEvery, .excludeIfAny:
                 if authorFilterList.contains(login) {
                     return .containsAuthor
                 }
-            case .includeIfAll, .includeIfAny:
+            case .includeIfEvery, .includeIfAny:
                 if !authorFilterList.contains(login) {
                     return .doesntContainAuthor
                 }

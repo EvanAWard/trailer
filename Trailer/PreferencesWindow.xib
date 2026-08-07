@@ -1030,8 +1030,8 @@ Token</string>
                                                                         <items>
                                                                             <menuItem title="Exclude items that contain any of these labels " state="on" id="oZ3-Nc-OFO"/>
                                                                             <menuItem title="Only show items that contain any of these labels" id="aIw-GD-erQ"/>
-                                                                            <menuItem title="Exclude items that contain all of these labels" id="f1A-uz-ECO"/>
-                                                                            <menuItem title="Only show items that contain all of these labels" id="vkp-9w-srk"/>
+                                                                            <menuItem title="Exclude items that contain every one of these labels" id="f1A-uz-ECO"/>
+                                                                            <menuItem title="Only show items that contain every one of these labels" id="vkp-9w-srk"/>
                                                                         </items>
                                                                     </menu>
                                                                 </popUpButtonCell>

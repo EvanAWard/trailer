@@ -29,7 +29,7 @@ enum MigrationStatus: Int {
 }
 
 enum InclusionSetting: Int {
-    case excludeIfAny, includeIfAny, excludeIfAll, includeIfAll
+    case excludeIfAny, includeIfAny, excludeIfEvery, includeIfEvery
 
     func shouldContributeToCount(isMine: Bool, userName: String?, createdAt: Date?, since: Date, settings: Settings.Cache) -> Bool {
         guard !isMine,
@@ -45,9 +45,9 @@ enum InclusionSetting: Int {
 
         let contains = list.contains(userName.comparableForm)
         switch self {
-        case .includeIfAll, .includeIfAny:
+        case .includeIfEvery, .includeIfAny:
             return contains
-        case .excludeIfAll, .excludeIfAny:
+        case .excludeIfEvery, .excludeIfAny:
             return !contains
         }
     }
