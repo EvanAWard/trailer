@@ -6,6 +6,12 @@ import UniformTypeIdentifiers
 final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, NSTableViewDataSource, NSTabViewDelegate, NSControlTextEditingDelegate {
     private var deferredUpdateTimer: PopTimer!
     private var serversDirty = false
+    /**
+     Whether any repository asks for the file paths of its pull requests. Held here because the note
+     under the path controls is refreshed on every keystroke, while the fetch behind this answer
+     walks every repository.
+     */
+    private var anyRepoSyncsFilePaths = false
 
     func reset() {
         preferencesDirty = true
@@ -463,19 +469,32 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     }
 
     /**
+     Re-reads whether any repository asks for file paths. Every point at which that answer can change
+     while the window is open calls this before it refreshes the note.
+     */
+    private func refreshAnyRepoSyncsFilePaths() {
+        anyRepoSyncsFilePaths = Repo.anyReposSyncingFilePaths(in: DataManager.main)
+    }
+
+    /**
      The note under the path controls, which names the setting the move depends on, and warns about the
-     two states that leave a moved item out of sight.
+     two states that leave a moved item out of sight. It also carries the dim state of the two
+     controls, because a control which cannot act should not accept input.
      */
     private func updatePathFilterNote() {
+        let v4 = Settings.useV4API
+        pathFilterList.isEnabled = v4
+        pathFilterMovePolicy.isEnabled = v4
+
         let armed = !PathFilter.patterns(from: Settings.pathFilterList).isEmpty
             && Settings.pathFilterMovePolicy.preferredSection != nil
 
         let text: String
         let color: NSColor
-        if !Settings.useV4API {
+        if !v4 {
             text = "Moving items by path needs the v4 API."
             color = .disabledControlTextColor
-        } else if armed, !Repo.anyReposSyncingFilePaths(in: DataManager.main) {
+        } else if armed, !anyRepoSyncsFilePaths {
             text = "No repository has File Paths ticked, so nothing will move."
             color = .appRed
         } else if armed, Settings.hideUncommentedItems {
@@ -763,6 +782,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
         newItemInOwnedRepoMovePolicy.selectItem(at: Settings.newItemInOwnedRepoMovePolicy.movePolicyMenuIndex)
         pathFilterList.objectValue = Settings.pathFilterList
         pathFilterMovePolicy.selectItem(at: Settings.pathFilterMovePolicy.movePolicyMenuIndex)
+        refreshAnyRepoSyncsFilePaths()
         updatePathFilterNote()
 
         hotkeyEnable.integerValue = Settings.hotkeyEnable.asInt
@@ -1750,6 +1770,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
                 refreshRepos()
             }
             if newIndex == 3 {
+                refreshAnyRepoSyncsFilePaths()
                 updatePathFilterNote()
             }
             Settings.lastPreferencesTabSelectedOSX = newIndex
@@ -1905,6 +1926,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
                             p.changedFilePaths = nil
                         }
                     }
+                    refreshAnyRepoSyncsFilePaths()
                     updatePathFilterNote()
                     deferredUpdateTimer.push()
                 }
