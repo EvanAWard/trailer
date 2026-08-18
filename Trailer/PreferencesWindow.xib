@@ -15,11 +15,11 @@
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <window title="Trailer Preferences" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" restorable="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="vQH-WF-vh2" customClass="PreferencesWindow" customModule="Trailer" customModuleProvider="target">
             <windowStyleMask key="styleMask" titled="YES" closable="YES" resizable="YES"/>
-            <rect key="contentRect" x="335" y="390" width="944" height="520"/>
+            <rect key="contentRect" x="335" y="390" width="1100" height="520"/>
             <rect key="screenRect" x="0.0" y="0.0" width="2560" height="1415"/>
             <value key="minSize" type="size" width="880" height="520"/>
             <view key="contentView" id="nDu-sJ-Klg">
-                <rect key="frame" x="0.0" y="0.0" width="944" height="520"/>
+                <rect key="frame" x="0.0" y="0.0" width="1100" height="520"/>
                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                 <subviews>
                     <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="H3d-cL-Izf">
@@ -43,13 +43,13 @@
                         </textFieldCell>
                     </textField>
                     <tabView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="RGK-bv-JXB">
-                        <rect key="frame" x="13" y="42" width="918" height="472"/>
+                        <rect key="frame" x="13" y="42" width="1074" height="472"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <font key="font" metaFont="system"/>
                         <tabViewItems>
                             <tabViewItem label="Servers" identifier="" id="SOc-1o-tdR">
                                 <view key="view" id="qLY-Ye-wy7">
-                                    <rect key="frame" x="10" y="33" width="898" height="426"/>
+                                    <rect key="frame" x="10" y="33" width="1054" height="426"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <scrollView fixedFrame="YES" autohidesScrollers="YES" horizontalLineScroll="30" horizontalPageScroll="10" verticalLineScroll="30" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="FEq-Qw-Vgd">
@@ -334,7 +334,7 @@ Token</string>
                             </tabViewItem>
                             <tabViewItem label="Repositories" identifier="1" id="8ZQ-7Z-tCc">
                                 <view key="view" id="SdJ-82-U77">
-                                    <rect key="frame" x="10" y="33" width="898" height="426"/>
+                                    <rect key="frame" x="10" y="33" width="1054" height="426"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <scrollView fixedFrame="YES" autohidesScrollers="YES" horizontalLineScroll="28" horizontalPageScroll="10" verticalLineScroll="28" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="dPG-Wd-B7N">
@@ -598,7 +598,7 @@ Token</string>
                             </tabViewItem>
                             <tabViewItem label="Display" identifier="" id="eo7-T1-mRS">
                                 <view key="view" id="fNr-eq-ZlF">
-                                    <rect key="frame" x="10" y="33" width="898" height="426"/>
+                                    <rect key="frame" x="10" y="33" width="1054" height="426"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="2sV-KJ-4NT">
@@ -1005,7 +1005,7 @@ Token</string>
                             </tabViewItem>
                             <tabViewItem label="Filtering" identifier="" id="tDG-Sx-0zI">
                                 <view key="view" id="mSZ-ZT-Fkj">
-                                    <rect key="frame" x="10" y="33" width="898" height="426"/>
+                                    <rect key="frame" x="10" y="33" width="1054" height="426"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="znS-yi-OgT">
@@ -1238,7 +1238,7 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                             </tabViewItem>
                             <tabViewItem label="Paths" identifier="" id="Pth-b0-001">
                                 <view key="view" id="Pth-b0-002">
-                                    <rect key="frame" x="10" y="33" width="898" height="426"/>
+                                    <rect key="frame" x="10" y="33" width="1054" height="426"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <box fixedFrame="YES" borderType="line" title="Pull request file paths" translatesAutoresizingMaskIntoConstraints="NO" id="Pth-b0-003">
@@ -1306,7 +1306,7 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                             </tabViewItem>
                             <tabViewItem label="History" identifier="" id="g1R-BW-1ix">
                                 <view key="view" id="IqF-nu-n45">
-                                    <rect key="frame" x="10" y="33" width="898" height="426"/>
+                                    <rect key="frame" x="10" y="33" width="1054" height="426"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <box autoresizesSubviews="NO" fixedFrame="YES" borderType="none" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="HAA-q5-qyx">
@@ -1480,7 +1480,7 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                             </tabViewItem>
                             <tabViewItem label="Comments" identifier="" id="62J-pw-ytj">
                                 <view key="view" id="Coh-zT-J58">
-                                    <rect key="frame" x="10" y="33" width="898" height="426"/>
+                                    <rect key="frame" x="10" y="33" width="1054" height="426"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <box autoresizesSubviews="NO" fixedFrame="YES" borderType="none" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="9l1-g0-3Pv">
@@ -1679,7 +1679,7 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                             </tabViewItem>
                             <tabViewItem label="Reviews" identifier="" id="uC9-7Y-asH" userLabel="Reviews">
                                 <view key="view" id="dJh-so-Oju">
-                                    <rect key="frame" x="10" y="33" width="898" height="426"/>
+                                    <rect key="frame" x="10" y="33" width="1054" height="426"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <box fixedFrame="YES" boxType="custom" borderType="none" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="49Q-X3-TvK">
@@ -1915,7 +1915,7 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                             </tabViewItem>
                             <tabViewItem label="Reactions" identifier="" id="cRu-HJ-0Wx" userLabel="Reactions">
                                 <view key="view" id="Oi8-57-QIn">
-                                    <rect key="frame" x="10" y="33" width="898" height="426"/>
+                                    <rect key="frame" x="10" y="33" width="1054" height="426"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <box fixedFrame="YES" boxType="custom" borderType="none" cornerRadius="4" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="6p4-At-yAg">
@@ -1994,7 +1994,7 @@ Tip: Reactions are treated like comments, i.e. the rules about being notified on
                             </tabViewItem>
                             <tabViewItem label="Statuses" identifier="" id="q4f-6k-kbo">
                                 <view key="view" id="JDe-Yc-l44">
-                                    <rect key="frame" x="10" y="33" width="898" height="426"/>
+                                    <rect key="frame" x="10" y="33" width="1054" height="426"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <box autoresizesSubviews="NO" fixedFrame="YES" borderType="none" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="lHO-RU-wff">
@@ -2209,7 +2209,7 @@ Tip: Reactions are treated like comments, i.e. the rules about being notified on
                             </tabViewItem>
                             <tabViewItem label="Snooze" identifier="" id="ebR-tY-siH">
                                 <view key="view" id="zff-sZ-c5n">
-                                    <rect key="frame" x="10" y="33" width="898" height="426"/>
+                                    <rect key="frame" x="10" y="33" width="1054" height="426"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <scrollView fixedFrame="YES" autohidesScrollers="YES" horizontalLineScroll="22" horizontalPageScroll="10" verticalLineScroll="22" verticalPageScroll="10" usesPredominantAxisScrolling="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Nsu-el-chI">
@@ -2541,7 +2541,7 @@ Tip: Reactions are treated like comments, i.e. the rules about being notified on
                             </tabViewItem>
                             <tabViewItem label="Keyboard" identifier="" id="IwB-kY-rW2">
                                 <view key="view" id="nfd-Kr-NnB">
-                                    <rect key="frame" x="10" y="33" width="898" height="426"/>
+                                    <rect key="frame" x="10" y="33" width="1054" height="426"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <box autoresizesSubviews="NO" fixedFrame="YES" borderType="none" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="Opr-Qr-4c9">
@@ -2670,7 +2670,7 @@ in System Preferences -&gt; Security -&gt; Privacy.  Restart Trailer for the per
                             </tabViewItem>
                             <tabViewItem label="Misc" identifier="" id="MQq-26-EJI">
                                 <view key="view" id="1XC-Vs-6nF">
-                                    <rect key="frame" x="10" y="33" width="898" height="426"/>
+                                    <rect key="frame" x="10" y="33" width="1054" height="426"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <box autoresizesSubviews="NO" fixedFrame="YES" borderType="none" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="YKc-0b-31j">
