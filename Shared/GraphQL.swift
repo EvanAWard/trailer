@@ -481,6 +481,12 @@ enum GraphQL {
                             }
                         }
                     }
+
+                    if steps.contains(.filePaths) {
+                        Group("files", paging: profile.largePageSize) {
+                            Field("path")
+                        }
+                    }
                 }
 
                 if steps.contains(.reactions) {
