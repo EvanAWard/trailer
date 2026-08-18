@@ -18,6 +18,7 @@ final class Repo: DataItem {
     @NSManaged var manuallyAdded: Bool
     @NSManaged var archived: Bool
     @NSManaged var lastScannedIssueEventId: Int
+    @NSManaged var syncFilePaths: Bool
 
     override static var typeName: String {
         "Repo"
