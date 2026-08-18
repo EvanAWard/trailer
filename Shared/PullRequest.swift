@@ -95,6 +95,12 @@ final class PullRequest: ListableItem {
 
     static func sync(from nodes: Lista<Node>, on server: ApiServer, moc: NSManagedObjectContext, parentCache: FetchCache) {
         syncItems(of: PullRequest.self, from: nodes, on: server, moc: moc, parentCache: parentCache) { pr, node in
+            // the file path step answers with no updatedAt, so its payload has to be read above the guard below
+            if let edges = node.jsonPayload.potentialObject(named: "files")?.potentialArray(named: "edges") {
+                let paths = edges.compactMap { $0.potentialObject(named: "node")?.potentialString(named: "path") }
+                pr.changedFilePathsList += paths
+            }
+
             guard node.created || node.updated,
                   let parentId = node.parent?.id ?? node.jsonPayload.potentialObject(named: "repository")?.potentialString(named: "id"),
                   let parent = Repo.asParent(with: parentId, in: moc, parentCache: parentCache)

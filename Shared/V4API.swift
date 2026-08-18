@@ -31,6 +31,7 @@ extension API {
         static let comments = SyncSteps(rawValue: 1 << 2)
         static let reviewRequests = SyncSteps(rawValue: 1 << 3)
         static let statuses = SyncSteps(rawValue: 1 << 4)
+        static let filePaths = SyncSteps(rawValue: 1 << 5)
 
         var toString: String {
             var ret = [String]()
@@ -39,6 +40,9 @@ extension API {
             if contains(.comments) { ret.append("Comments") }
             if contains(.reviewRequests) { ret.append("Requests") }
             if contains(.statuses) { ret.append("Statuses") }
+            if contains(.filePaths) {
+                ret.append("File Paths")
+            }
             return ret.joined(separator: ", ")
         }
     }
@@ -108,6 +112,19 @@ extension API {
             let reviews = Review.newOrUpdatedItems(in: moc, fromSuccessfulSyncOnly: true)
             try await GraphQL.updateComments(for: reviews, profile: settings.syncProfile)
             await Logging.shared.log("Review comment fetch phase complete")
+
+            if settings.shouldSyncFilePaths {
+                let pathPrs = newOrUpdatedPrs.filter {
+                    $0.repo.syncFilePaths && $0.condition == ItemCondition.open.rawValue
+                }
+                for (_, serverPrs) in Dictionary(grouping: pathPrs, by: \.apiServer) {
+                    for pr in serverPrs {
+                        pr.changedFilePaths = "" // page one appends to nothing
+                    }
+                    try await GraphQL.update(for: serverPrs, steps: [.filePaths], settings: settings)
+                }
+                await Logging.shared.log("PR file path fetch phase complete")
+            }
         }
 
         let issueTask = Task {
