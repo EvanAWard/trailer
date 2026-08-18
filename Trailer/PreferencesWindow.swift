@@ -539,6 +539,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
             Settings.useV4API = sender.integerValue == 1
             sender.isEnabled = false
             updatePathFilterNote()
+            reloadRepositories()
             performFullReload()
         } else {
             sender.integerValue = 1 - sender.integerValue
@@ -1857,10 +1858,14 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
                     }
                     menuCell.selectItem(at: Int(selectedIndex))
                 }
-            } else if let forkButton = cell as? NSButtonCell {
+            } else if let buttonCell = cell as? NSButtonCell {
+                let repo = repos[row]
                 if tid == "remove" {
-                    let repo = repos[row]
-                    forkButton.image = repo.manuallyAdded ? NSImage(systemSymbolName: "xmark.square.fill", accessibilityDescription: "Remove") : nil
+                    buttonCell.image = repo.manuallyAdded ? NSImage(systemSymbolName: "xmark.square.fill", accessibilityDescription: "Remove") : nil
+                } else if tid == "filepaths" {
+                    // the dim state is the affordance that this needs the v4 API
+                    buttonCell.isEnabled = Settings.useV4API
+                    buttonCell.state = repo.syncFilePaths ? .on : .off
                 }
             }
         } else if tv == serverList {
@@ -1924,6 +1929,22 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
                 }
                 Task { @MainActor in
                     self.windowController?.window?.makeFirstResponder(tv)
+                }
+
+            } else if tableColumn?.identifier.rawValue == "filepaths" {
+                let newValue = (object as? Int ?? 0) != 0
+                if newValue != r.syncFilePaths {
+                    r.syncFilePaths = newValue
+                    if newValue {
+                        armPathFilterSync(warn: true)
+                    } else {
+                        // stored paths must not outlive the switch, so a later tick fetches them again
+                        for p in r.pullRequests {
+                            p.changedFilePaths = nil
+                        }
+                        updatePathFilterNote()
+                    }
+                    deferredUpdateTimer.push()
                 }
 
             } else if let index = object as? Int {
