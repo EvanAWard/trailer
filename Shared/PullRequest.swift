@@ -48,18 +48,6 @@ final class PullRequest: ListableItem {
         repo.pullRequests.reduce(.distantPast) { max($0, $1.updatedAt ?? .distantPast) }
     }
 
-    /**
-     The changed file paths that the last file path sync stored.
-
-     The setter writes an empty string for an empty list, never nil, because only nil means that no
-     sync ever fetched the paths, and the move in `preferredSectionBasedOnChangedPaths` needs that
-     difference.
-     */
-    var changedFilePathsList: [String] {
-        get { PathFilter.decode(changedFilePaths) }
-        set { changedFilePaths = PathFilter.encode(newValue) }
-    }
-
     var closesIssuesList: Set<String> {
         get {
             let list = closesIssueIds.orEmpty
@@ -96,9 +84,10 @@ final class PullRequest: ListableItem {
     static func sync(from nodes: Lista<Node>, on server: ApiServer, moc: NSManagedObjectContext, parentCache: FetchCache) {
         syncItems(of: PullRequest.self, from: nodes, on: server, moc: moc, parentCache: parentCache) { pr, node in
             // the file path step answers with no updatedAt, so its payload has to be read above the guard below
-            if let edges = node.jsonPayload.potentialObject(named: "files")?.potentialArray(named: "edges") {
-                let paths = edges.compactMap { $0.potentialObject(named: "node")?.potentialString(named: "path") }
-                pr.changedFilePathsList += paths
+            if let files = node.jsonPayload.potentialObject(named: "files") {
+                let paths = files.potentialArray(named: "edges")?
+                    .compactMap { $0.potentialObject(named: "node")?.potentialString(named: "path") } ?? []
+                pr.changedFilePaths = PathFilter.appending(paths, to: pr.changedFilePaths)
             }
 
             guard node.created || node.updated,
@@ -229,13 +218,13 @@ final class PullRequest: ListableItem {
     }
 
     override func preferredSectionBasedOnChangedPaths(settings: Settings.Cache) -> Section? {
-        // nil paths mean that no sync ever fetched them, and only the v4 sync fetches them
+        // no stored value means that no sync ever fetched the paths, and only the v4 sync fetches them
         guard settings.useV4API,
               let section = settings.pathFilterMovePolicy,
               repo.syncFilePaths,
               condition == ItemCondition.open.rawValue,
-              changedFilePaths != nil,
-              PathFilter.matchesAny(changedPaths: changedFilePathsList,
+              let stored = changedFilePaths,
+              PathFilter.matchesAny(changedPaths: PathFilter.decode(stored),
                                     patterns: settings.pathFilterPatterns)
         else { return nil }
         return section
