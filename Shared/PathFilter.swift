@@ -10,53 +10,52 @@ enum PathFilter {
     /**
      One user pattern, normalised once so that matching allocates nothing.
      */
-    struct Pattern {
+    enum Pattern {
         private static let wildcards: Set<Character> = ["*", "?"]
-        private static let separators = CharacterSet(charactersIn: "/")
+        private static let trimmed = CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "/"))
 
-        private let glob: String?
-        private let prefix: String
-        private let prefixWithSlash: String
+        case glob(String)
+        case components(prefix: String, prefixWithSlash: String)
 
         /**
          Prepares one pattern, or gives nil when nothing is left to match against.
 
          A changed file path arrives relative to the root of the repository, so a leading separator
-         would match nothing and comes off together with the surrounding whitespace.
+         would match nothing and comes off in the same pass as the surrounding whitespace.
          */
         init?(_ text: String) {
-            let normalised = text.trim.trimmingCharacters(in: Pattern.separators)
+            let normalised = text.trimmingCharacters(in: Pattern.trimmed).comparableForm
             if normalised.isEmpty {
                 return nil
             }
 
             if normalised.contains(where: { Pattern.wildcards.contains($0) }) {
                 // fnmatch reads these as syntax, but the help text offers only * and ?
-                glob = normalised
+                self = .glob(normalised
                     .replacingOccurrences(of: "\\", with: "\\\\")
-                    .replacingOccurrences(of: "[", with: "\\[")
+                    .replacingOccurrences(of: "[", with: "\\["))
             } else {
-                glob = nil
+                self = .components(prefix: normalised, prefixWithSlash: normalised + "/")
             }
-
-            let lowercased = normalised.lowercased()
-            prefix = lowercased
-            prefixWithSlash = lowercased + "/"
         }
 
         /**
-         Reports whether one changed file path matches this pattern.
+         Reports whether one changed file path matches this pattern. Both sides arrive in
+         `comparableForm`, so the comparison ignores case and diacritics as every other filter list
+         in the app does.
 
          A pattern that holds a wildcard is a glob. `FNM_PATHNAME` is deliberately not set, so a
          wildcard also crosses a directory separator and `*.md` finds a file at any depth. A pattern
          with no wildcard names whole path components instead, so `docs` reaches `docs/a.md` but
          never `documentation/a.md`.
          */
-        func matches(lowercasedPath: String) -> Bool {
-            if let glob {
-                return fnmatch(glob, lowercasedPath, FNM_CASEFOLD) == 0
+        func matches(comparablePath: String) -> Bool {
+            switch self {
+            case let .glob(glob):
+                fnmatch(glob, comparablePath, FNM_CASEFOLD) == 0
+            case let .components(prefix, prefixWithSlash):
+                comparablePath == prefix || comparablePath.hasPrefix(prefixWithSlash)
             }
-            return lowercasedPath == prefix || lowercasedPath.hasPrefix(prefixWithSlash)
         }
     }
 
@@ -73,8 +72,8 @@ enum PathFilter {
     static func matchesAny(changedPaths: [String], patterns: [Pattern]) -> Bool {
         guard !patterns.isEmpty else { return false }
         return changedPaths.contains { path in
-            let lowercased = path.lowercased()
-            return patterns.contains { $0.matches(lowercasedPath: lowercased) }
+            let comparable = path.comparableForm
+            return patterns.contains { $0.matches(comparablePath: comparable) }
         }
     }
 
@@ -83,9 +82,28 @@ enum PathFilter {
     /**
      Joins a list of changed paths for storage in one attribute. An empty list gives an empty
      string, never nil, because only nil means that the sync never fetched the paths.
+
+     A path which holds the separator is dropped. Git allows a newline in a path, and a stored one
+     would split into two false entries when it is decoded.
      */
     static func encode(_ paths: [String]) -> String {
-        paths.joined(separator: separator)
+        paths.filter { !$0.contains(separator) }.joined(separator: separator)
+    }
+
+    /**
+     Joins one page of changed paths onto a stored value, so that following a page does not decode
+     and re-join the whole list each time. An empty page gives an empty string, never nil, for the
+     same reason `encode` does.
+     */
+    static func appending(_ paths: [String], to stored: String?) -> String {
+        let page = encode(paths)
+        if page.isEmpty {
+            return stored ?? ""
+        }
+        guard let stored, !stored.isEmpty else {
+            return page
+        }
+        return stored + separator + page
     }
 
     /**
