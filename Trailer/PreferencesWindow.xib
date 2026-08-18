@@ -412,7 +412,7 @@ Token</string>
                                                                 </popUpButtonCell>
                                                                 <sortDescriptor key="sortDescriptorPrototype" selector="compare:" sortKey="displayPolicyForIssues" ascending="NO"/>
                                                             </tableColumn>
-                                                            <tableColumn identifier="filepaths" width="70" minWidth="10" maxWidth="1000" headerToolTip="Download the changed file paths of the pull requests of this repository. The Paths tab uses them to move items. Needs the v4 API." id="Pth-b0-020" userLabel="File Paths">
+                                                            <tableColumn identifier="filepaths" width="70" minWidth="10" maxWidth="1000" headerToolTip="Download the changed file paths of the pull requests of this repository. The Filtering tab uses them to move items. Needs the v4 API." id="Pth-b0-020" userLabel="File Paths">
                                                                 <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="File Paths">
                                                                     <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                                     <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
@@ -1009,7 +1009,7 @@ Token</string>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <customView fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="znS-yi-OgT">
-                                            <rect key="frame" x="143" y="15" width="612" height="381"/>
+                                            <rect key="frame" x="18" y="15" width="1018" height="381"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                                             <subviews>
                                                 <box fixedFrame="YES" borderType="line" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="CJA-2d-6Fl">
@@ -1054,7 +1054,7 @@ Token</string>
                                                     </view>
                                                 </box>
                                                 <box autoresizesSubviews="NO" fixedFrame="YES" borderType="bezel" title="When searching, check…" translatesAutoresizingMaskIntoConstraints="NO" id="qj6-v4-SsR">
-                                                    <rect key="frame" x="433" y="87" width="162" height="274"/>
+                                                    <rect key="frame" x="849" y="87" width="162" height="274"/>
                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                     <view key="contentView" id="Cga-gV-Gct">
                                                         <rect key="frame" x="4" y="5" width="154" height="254"/>
@@ -1231,76 +1231,68 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                                                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                     </textFieldCell>
                                                 </textField>
+                                                <box fixedFrame="YES" borderType="line" title="Pull request file paths" translatesAutoresizingMaskIntoConstraints="NO" id="Pth-b0-003">
+                                                    <rect key="frame" x="433" y="189" width="406" height="174"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                    <view key="contentView" id="Pth-b0-004">
+                                                        <rect key="frame" x="4" y="5" width="398" height="154"/>
+                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                        <subviews>
+                                                            <tokenField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Pth-b0-005">
+                                                                <rect key="frame" x="20" y="86" width="358" height="64"/>
+                                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                <tokenFieldCell key="cell" selectable="YES" editable="YES" borderStyle="bezel" alignment="left" placeholderString="Comma separated list of path patterns, e.g. *.md (needs the v4 API)" drawsBackground="YES" allowsEditingTextAttributes="YES" tokenStyle="rounded" id="Pth-b0-006">
+                                                                    <font key="font" metaFont="cellTitle"/>
+                                                                    <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                </tokenFieldCell>
+                                                                <connections>
+                                                                    <outlet property="delegate" destination="vQH-WF-vh2" id="Pth-b0-007"/>
+                                                                </connections>
+                                                            </tokenField>
+                                                            <box fixedFrame="YES" borderType="none" title="Items that change these paths, move to…" translatesAutoresizingMaskIntoConstraints="NO" id="Pth-b0-008">
+                                                                <rect key="frame" x="17" y="26" width="365" height="51"/>
+                                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                <view key="contentView" id="Pth-b0-009">
+                                                                    <rect key="frame" x="0.0" y="0.0" width="365" height="39"/>
+                                                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                    <subviews>
+                                                                        <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Pth-b0-010">
+                                                                            <rect key="frame" x="-2" y="14" width="365" height="26"/>
+                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                            <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="Pth-b0-011">
+                                                                                <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                                                                <font key="font" metaFont="menu"/>
+                                                                                <menu key="menu" id="Pth-b0-012">
+                                                                                    <items>
+                                                                                        <menuItem title="Don't Move" id="Pth-b0-013"/>
+                                                                                        <menuItem title="Mine" id="Pth-b0-014"/>
+                                                                                        <menuItem title="Participated" id="Pth-b0-015"/>
+                                                                                        <menuItem title="Mentioned" id="Pth-b0-016"/>
+                                                                                    </items>
+                                                                                </menu>
+                                                                            </popUpButtonCell>
+                                                                            <connections>
+                                                                                <action selector="pathFilterMovePolicySelected:" target="vQH-WF-vh2" id="Pth-b0-017"/>
+                                                                            </connections>
+                                                                        </popUpButton>
+                                                                    </subviews>
+                                                                </view>
+                                                            </box>
+                                                        </subviews>
+                                                    </view>
+                                                </box>
+                                                <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" setsMaxLayoutWidthAtFirstLayout="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Pth-b0-018">
+                                                    <rect key="frame" x="433" y="132" width="406" height="48"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="center" title="Applies to the repositories with File Paths ticked." id="Pth-b0-019">
+                                                        <font key="font" size="9" name="HelveticaNeue"/>
+                                                        <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                    </textFieldCell>
+                                                </textField>
                                             </subviews>
                                         </customView>
-                                    </subviews>
-                                </view>
-                            </tabViewItem>
-                            <tabViewItem label="Paths" identifier="" id="Pth-b0-001">
-                                <view key="view" id="Pth-b0-002">
-                                    <rect key="frame" x="10" y="33" width="1054" height="426"/>
-                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                    <subviews>
-                                        <box fixedFrame="YES" borderType="line" title="Pull request file paths" translatesAutoresizingMaskIntoConstraints="NO" id="Pth-b0-003">
-                                            <rect key="frame" x="246" y="126" width="406" height="174"/>
-                                            <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
-                                            <view key="contentView" id="Pth-b0-004">
-                                                <rect key="frame" x="4" y="5" width="398" height="154"/>
-                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                                <subviews>
-                                                    <tokenField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Pth-b0-005">
-                                                        <rect key="frame" x="20" y="86" width="358" height="64"/>
-                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                                        <tokenFieldCell key="cell" selectable="YES" editable="YES" borderStyle="bezel" alignment="left" placeholderString="Comma separated list of path patterns, e.g. *.md (needs the v4 API)" drawsBackground="YES" allowsEditingTextAttributes="YES" tokenStyle="rounded" id="Pth-b0-006">
-                                                            <font key="font" metaFont="cellTitle"/>
-                                                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
-                                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                                        </tokenFieldCell>
-                                                        <connections>
-                                                            <outlet property="delegate" destination="vQH-WF-vh2" id="Pth-b0-007"/>
-                                                        </connections>
-                                                    </tokenField>
-                                                    <box fixedFrame="YES" borderType="none" title="Items that change these paths, move to…" translatesAutoresizingMaskIntoConstraints="NO" id="Pth-b0-008">
-                                                        <rect key="frame" x="17" y="26" width="365" height="51"/>
-                                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                        <view key="contentView" id="Pth-b0-009">
-                                                            <rect key="frame" x="0.0" y="0.0" width="365" height="39"/>
-                                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                                                            <subviews>
-                                                                <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Pth-b0-010">
-                                                                    <rect key="frame" x="-2" y="14" width="365" height="26"/>
-                                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                                    <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="Pth-b0-011">
-                                                                        <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                                                        <font key="font" metaFont="menu"/>
-                                                                        <menu key="menu" id="Pth-b0-012">
-                                                                            <items>
-                                                                                <menuItem title="Don't Move" id="Pth-b0-013"/>
-                                                                                <menuItem title="Mine" id="Pth-b0-014"/>
-                                                                                <menuItem title="Participated" id="Pth-b0-015"/>
-                                                                                <menuItem title="Mentioned" id="Pth-b0-016"/>
-                                                                            </items>
-                                                                        </menu>
-                                                                    </popUpButtonCell>
-                                                                    <connections>
-                                                                        <action selector="pathFilterMovePolicySelected:" target="vQH-WF-vh2" id="Pth-b0-017"/>
-                                                                    </connections>
-                                                                </popUpButton>
-                                                            </subviews>
-                                                        </view>
-                                                    </box>
-                                                </subviews>
-                                            </view>
-                                        </box>
-                                        <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" setsMaxLayoutWidthAtFirstLayout="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Pth-b0-018">
-                                            <rect key="frame" x="203" y="70" width="492" height="48"/>
-                                            <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
-                                            <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="center" title="Applies to the repositories with File Paths ticked." id="Pth-b0-019">
-                                                <font key="font" size="9" name="HelveticaNeue"/>
-                                                <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
-                                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
-                                            </textFieldCell>
-                                        </textField>
                                     </subviews>
                                 </view>
                             </tabViewItem>
