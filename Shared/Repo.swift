@@ -273,7 +273,8 @@ final class Repo: DataItem {
                 // Hide downloads no subscribed items and Authored reaches only your own, so neither can gain paths
                 continue
             }
-            for pr in repo.pullRequests where pr.condition == ItemCondition.open.rawValue && pr.changedFilePaths == nil {
+            // a repeat arming must not re-raise the "only once" sync warning, so only a row this pass actually marks counts
+            for pr in repo.pullRequests where pr.condition == ItemCondition.open.rawValue && pr.changedFilePaths == nil && pr.postSyncAction == PostSyncAction.doNothing.rawValue {
                 pr.setToUpdatedIfIdle()
                 madeChanges = true
             }
