@@ -1229,6 +1229,68 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                                 <view key="view" id="Pth-b0-002">
                                     <rect key="frame" x="10" y="33" width="898" height="426"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                    <subviews>
+                                        <box fixedFrame="YES" borderType="line" title="Pull request file paths" translatesAutoresizingMaskIntoConstraints="NO" id="Pth-b0-003">
+                                            <rect key="frame" x="246" y="126" width="406" height="174"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
+                                            <view key="contentView" id="Pth-b0-004">
+                                                <rect key="frame" x="4" y="5" width="398" height="154"/>
+                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                <subviews>
+                                                    <tokenField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Pth-b0-005">
+                                                        <rect key="frame" x="20" y="86" width="358" height="64"/>
+                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                        <tokenFieldCell key="cell" selectable="YES" editable="YES" borderStyle="bezel" alignment="left" placeholderString="Comma separated list of path patterns, e.g. *.md (needs the v4 API)" drawsBackground="YES" allowsEditingTextAttributes="YES" tokenStyle="rounded" id="Pth-b0-006">
+                                                            <font key="font" metaFont="cellTitle"/>
+                                                            <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                            <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                        </tokenFieldCell>
+                                                        <connections>
+                                                            <outlet property="delegate" destination="vQH-WF-vh2" id="Pth-b0-007"/>
+                                                        </connections>
+                                                    </tokenField>
+                                                    <box fixedFrame="YES" borderType="none" title="Items that change these paths, move to…" translatesAutoresizingMaskIntoConstraints="NO" id="Pth-b0-008">
+                                                        <rect key="frame" x="17" y="26" width="365" height="51"/>
+                                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                        <view key="contentView" id="Pth-b0-009">
+                                                            <rect key="frame" x="0.0" y="0.0" width="365" height="39"/>
+                                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                            <subviews>
+                                                                <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Pth-b0-010">
+                                                                    <rect key="frame" x="-2" y="14" width="365" height="26"/>
+                                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                    <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="Pth-b0-011">
+                                                                        <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
+                                                                        <font key="font" metaFont="menu"/>
+                                                                        <menu key="menu" id="Pth-b0-012">
+                                                                            <items>
+                                                                                <menuItem title="Don't Move" id="Pth-b0-013"/>
+                                                                                <menuItem title="Mine" id="Pth-b0-014"/>
+                                                                                <menuItem title="Participated" id="Pth-b0-015"/>
+                                                                                <menuItem title="Mentioned" id="Pth-b0-016"/>
+                                                                            </items>
+                                                                        </menu>
+                                                                    </popUpButtonCell>
+                                                                    <connections>
+                                                                        <action selector="pathFilterMovePolicySelected:" target="vQH-WF-vh2" id="Pth-b0-017"/>
+                                                                    </connections>
+                                                                </popUpButton>
+                                                            </subviews>
+                                                        </view>
+                                                    </box>
+                                                </subviews>
+                                            </view>
+                                        </box>
+                                        <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" setsMaxLayoutWidthAtFirstLayout="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Pth-b0-018">
+                                            <rect key="frame" x="203" y="70" width="492" height="48"/>
+                                            <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
+                                            <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="center" title="Applies to the repositories with File Paths ticked." id="Pth-b0-019">
+                                                <font key="font" size="9" name="HelveticaNeue"/>
+                                                <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                                                <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                            </textFieldCell>
+                                        </textField>
+                                    </subviews>
                                 </view>
                             </tabViewItem>
                             <tabViewItem label="History" identifier="" id="g1R-BW-1ix">
@@ -3027,6 +3089,9 @@ in System Preferences -&gt; Security -&gt; Privacy.  Restart Trailer for the per
                 <outlet property="statusTermsField" destination="oW9-uY-e0m" id="xZo-19-rE2"/>
                 <outlet property="supportReviews" destination="7m1-w3-6Le" id="DWw-Ai-Sb9"/>
                 <outlet property="notificationSoundsContainer" destination="Nt2-So-un2" id="Nt3-So-un3"/>
+                <outlet property="pathFilterList" destination="Pth-b0-005" id="Pth-b0-030"/>
+                <outlet property="pathFilterMovePolicy" destination="Pth-b0-010" id="Pth-b0-031"/>
+                <outlet property="pathFilterNote" destination="Pth-b0-018" id="Pth-b0-032"/>
                 <outlet property="tabs" destination="RGK-bv-JXB" id="B5b-gW-VDa"/>
                 <outlet property="teamMentionMovePolicy" destination="gM2-vc-gT5" id="ZPB-jw-m7v"/>
                 <outlet property="v4ApiSwitch" destination="7V9-LT-Yjg" id="3qv-tI-fGl"/>

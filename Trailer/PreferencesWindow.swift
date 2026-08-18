@@ -6,6 +6,11 @@ import UniformTypeIdentifiers
 final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, NSTableViewDataSource, NSTabViewDelegate, NSControlTextEditingDelegate {
     private var deferredUpdateTimer: PopTimer!
     private var serversDirty = false
+    /**
+     Set when the path list gains its first pattern, so that the warning about the long sync is raised
+     only once the user has finished editing the field, rather than on the first keystroke.
+     */
+    private var pathFilterSyncWarningPending = false
 
     func reset() {
         preferencesDirty = true
@@ -109,6 +114,11 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     @IBOutlet private var teamMentionMovePolicy: NSPopUpButton!
     @IBOutlet private var newItemInOwnedRepoMovePolicy: NSPopUpButton!
     @IBOutlet private var highlightItemsWithNewCommits: NSButton!
+
+    // Paths
+    @IBOutlet private var pathFilterList: NSTokenField!
+    @IBOutlet private var pathFilterMovePolicy: NSPopUpButton!
+    @IBOutlet private var pathFilterNote: NSTextField!
 
     // Display
     @IBOutlet private var grayOutWhenRefreshing: NSButton!
@@ -457,6 +467,55 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
         a.beginSheetModal(for: self)
     }
 
+    /**
+     Marks for re-sync the pull requests whose changed paths are missing, and warns about the longer
+     sync that this causes.
+
+     A caller that fires per keystroke passes false, so that the warning waits for the field to finish
+     editing rather than stealing first responder from it.
+     */
+    private func armPathFilterSync(warn: Bool) {
+        updatePathFilterNote()
+
+        guard Repo.resetSyncOfMissingChangedPaths(in: DataManager.main) else {
+            return
+        }
+        preferencesDirty = true
+        if warn {
+            showLongSyncWarning()
+        } else {
+            pathFilterSyncWarningPending = true
+        }
+    }
+
+    /**
+     The note under the path controls, which names the setting the move depends on, and warns about the
+     two states that leave a moved item out of sight.
+     */
+    private func updatePathFilterNote() {
+        let armed = !PathFilter.patterns(from: Settings.pathFilterList).isEmpty
+            && Settings.pathFilterMovePolicy.preferredSection != nil
+
+        let text: String
+        let color: NSColor
+        if !Settings.useV4API {
+            text = "Moving items by path needs the v4 API."
+            color = .disabledControlTextColor
+        } else if armed, !Repo.anyReposSyncingFilePaths(in: DataManager.main) {
+            text = "No repository has File Paths ticked, so nothing will move."
+            color = .appRed
+        } else if armed, Settings.hideUncommentedItems {
+            text = "\"Only display items with unread badges\" keeps moved items hidden."
+            color = .appRed
+        } else {
+            text = "Applies to the repositories with File Paths ticked."
+            color = .secondaryLabelColor
+        }
+        pathFilterNote.stringValue = text
+        pathFilterNote.textColor = color
+        pathFilterNote.toolTip = text
+    }
+
     @IBAction private func v4APISwitchChanged(_ sender: NSButton) {
         if sender.integerValue == 1, let error = API.canUseV4API(for: DataManager.main) {
             sender.integerValue = 0
@@ -479,6 +538,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
         if alert.runModal() == .alertSecondButtonReturn {
             Settings.useV4API = sender.integerValue == 1
             sender.isEnabled = false
+            updatePathFilterNote()
             performFullReload()
         } else {
             sender.integerValue = 1 - sender.integerValue
@@ -567,6 +627,8 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
         newMentionMovePolicy.toolTip = Settings.newMentionMovePolicyHelp
         teamMentionMovePolicy.toolTip = Settings.teamMentionMovePolicyHelp
         newItemInOwnedRepoMovePolicy.toolTip = Settings.newItemInOwnedRepoMovePolicyHelp
+        pathFilterList.toolTip = Settings.pathFilterListHelp
+        pathFilterMovePolicy.toolTip = Settings.pathFilterMovePolicyHelp
         notifyOnAllChangeRequests.toolTip = Settings.notifyOnAllReviewChangeRequestsHelp
         notifyOnChangeRequests.toolTip = Settings.notifyOnReviewChangeRequestsHelp
         notifyOnAllAcceptances.toolTip = Settings.notifyOnAllReviewChangeRequestsHelp
@@ -724,6 +786,9 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
         newMentionMovePolicy.selectItem(at: Settings.newMentionMovePolicy.movePolicyMenuIndex)
         teamMentionMovePolicy.selectItem(at: Settings.teamMentionMovePolicy.movePolicyMenuIndex)
         newItemInOwnedRepoMovePolicy.selectItem(at: Settings.newItemInOwnedRepoMovePolicy.movePolicyMenuIndex)
+        pathFilterList.objectValue = Settings.pathFilterList
+        pathFilterMovePolicy.selectItem(at: Settings.pathFilterMovePolicy.movePolicyMenuIndex)
+        updatePathFilterNote()
 
         hotkeyEnable.integerValue = Settings.hotkeyEnable.asInt
         hotkeyControlModifier.integerValue = Settings.hotkeyControlModifier.asInt
@@ -865,6 +930,12 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     @IBAction private func newItemInOwnedRepoMovePolicySelected(_ sender: NSPopUpButton) {
         Settings.newItemInOwnedRepoMovePolicy = Section(movePolicyMenuIndex: sender.indexOfSelectedItem)
         deferredUpdateTimer.push()
+    }
+
+    @IBAction private func pathFilterMovePolicySelected(_ sender: NSPopUpButton) {
+        Settings.pathFilterMovePolicy = Section(movePolicyMenuIndex: sender.indexOfSelectedItem)
+        deferredUpdateTimer.push()
+        armPathFilterSync(warn: true)
     }
 
     @IBAction private func dontConfirmRemoveAllMergedSelected(_ sender: NSButton) {
@@ -1144,6 +1215,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     @IBAction private func hideUncommentedRequestsSelected(_ sender: NSButton) {
         Settings.hideUncommentedItems = (sender.integerValue == 1)
         deferredUpdateTimer.push()
+        updatePathFilterNote()
     }
 
     @IBAction private func showAllCommentsSelected(_ sender: NSButton) {
@@ -1613,6 +1685,8 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     }
 
     func windowWillClose(_: Notification) {
+        // the fallback for a field that still holds focus; a sheet on a closing window would be useless
+        armPathFilterSync(warn: false)
         advancedReposWindow?.close()
         apiOptionsWindow?.close()
         if ApiServer.someServersHaveAuthTokens(in: DataManager.main), preferencesDirty {
@@ -1683,7 +1757,23 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
                 Settings.labelBlacklist = newTokens
                 deferredUpdateTimer.push()
             }
+
+        } else if obj === pathFilterList {
+            let newTokens = pathFilterList.objectValue as! [String]
+            if Settings.pathFilterList != newTokens {
+                Settings.pathFilterList = newTokens
+                deferredUpdateTimer.push()
+                armPathFilterSync(warn: false)
+            }
         }
+    }
+
+    func controlTextDidEndEditing(_ n: Notification) {
+        guard n.object as? NSTextField === pathFilterList, pathFilterSyncWarningPending else {
+            return
+        }
+        pathFilterSyncWarningPending = false
+        showLongSyncWarning()
     }
 
     ///////////// Tabs
@@ -1693,6 +1783,9 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
             let newIndex = tabView.indexOfTabViewItem(tabViewItem)
             if newIndex == 1, lastRepoCheck == .distantPast {
                 refreshRepos()
+            }
+            if newIndex == 4 {
+                updatePathFilterNote()
             }
             Settings.lastPreferencesTabSelectedOSX = newIndex
         }
