@@ -1785,7 +1785,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
             if newIndex == 1, lastRepoCheck == .distantPast {
                 refreshRepos()
             }
-            if newIndex == 4 {
+            if newIndex == 3 {
                 updatePathFilterNote()
             }
             Settings.lastPreferencesTabSelectedOSX = newIndex
