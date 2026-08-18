@@ -1225,6 +1225,12 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                                     </subviews>
                                 </view>
                             </tabViewItem>
+                            <tabViewItem label="Paths" identifier="" id="Pth-b0-001">
+                                <view key="view" id="Pth-b0-002">
+                                    <rect key="frame" x="10" y="33" width="898" height="426"/>
+                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                </view>
+                            </tabViewItem>
                             <tabViewItem label="History" identifier="" id="g1R-BW-1ix">
                                 <view key="view" id="IqF-nu-n45">
                                     <rect key="frame" x="10" y="33" width="898" height="426"/>
