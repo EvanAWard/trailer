@@ -80,6 +80,9 @@ enum Settings {
         let preferredMovePolicySection = Settings.newMentionMovePolicy.preferredSection
         let preferredTeamMentionPolicy = Settings.teamMentionMovePolicy.preferredSection
         let newItemInOwnedRepoMovePolicy = Settings.newItemInOwnedRepoMovePolicy.preferredSection
+        let pathFilterPatterns = PathFilter.patterns(from: Settings.pathFilterList)
+        let pathFilterMovePolicy = Settings.pathFilterMovePolicy.preferredSection
+        let useV4API = Settings.useV4API
         let assignedItemDirectHandlingPolicy = Settings.assignedItemDirectHandlingPolicy
         let assignedItemTeamHandlingPolicy = Settings.assignedItemTeamHandlingPolicy
         let notifyOnAllReviewChangeRequests = Settings.notifyOnAllReviewChangeRequests
@@ -142,6 +145,7 @@ enum Settings {
         let shouldSyncReactions: Bool
         let shouldSyncReviews: Bool
         let shouldSyncReviewAssignments: Bool
+        let shouldSyncFilePaths: Bool
 
         init() {
             Task {
@@ -149,6 +153,8 @@ enum Settings {
             }
 
             shouldSyncReactions = notifyOnItemReactions || notifyOnCommentReactions
+
+            shouldSyncFilePaths = !pathFilterPatterns.isEmpty && pathFilterMovePolicy != nil
 
             shouldSyncReviews = displayReviewsOnItems
                 || notifyOnReviewDismissals
@@ -185,7 +191,7 @@ enum Settings {
             "AUTO_SNOOZE_DAYS", "HIDE_MENUBAR_COUNTS", "AUTO_ADD_NEW_REPOS", "AUTO_REMOVE_DELETED_REPOS", "MARK_PRS_AS_UNREAD_ON_NEW_COMMITS", "SHOW_LABELS", "DISPLAY_REVIEW_CHANGE_REQUESTS", "SHOW_RELATIVE_DATES", "QUERY_AUTHORED_PRS", "QUERY_AUTHORED_ISSUES",
             "DISPLAY_MILESTONES", "DEFAULT_APP_FOR_OPENING_WEB", "DEFAULT_APP_FOR_OPENING_ITEMS", "HIDE_ARCHIVED_REPOS", "DRAFT_HANDLING_POLICY", "MARK_UNMERGEABLE_ITEMS", "SHOW_PR_LINES", "SCAN_CLOSED_AND_MERGED", "USE_V4_API", "REQUESTED_TEAM_REVIEWS",
             "SHOW_STATUSES_GREEN", "SHOW_STATUSES_GRAY", "SHOW_STATUSES_YELLOW", "SHOW_STATUSES_RED", "SHOW_BASE_AND_HEAD_BRANCHES", "PERSISTED_TAB_FILTERS", "PR_V4_SYNC_PAGE", "ISSUE_V4_SYNC_PAGE", "V4_THREAD_SYNC", "ASSIGNED_PR_TEAM_HANDLING_POLICY",
-            "ASSIGNED_REVIEW_TEAM_HANDLING_POLICY", "AUTO_REMOVE_MERGED_ITEMS", "AUTO_REMOVE_CLOSED_ITEMS", "LABELS_INCLUSION_RULE", "AUTHORS_INCLUSION_RULE", "COMMENTER_INCLUSION_RULE", "SHOW_CLOSING_INFO"
+            "ASSIGNED_REVIEW_TEAM_HANDLING_POLICY", "AUTO_REMOVE_MERGED_ITEMS", "AUTO_REMOVE_CLOSED_ITEMS", "LABELS_INCLUSION_RULE", "AUTHORS_INCLUSION_RULE", "COMMENTER_INCLUSION_RULE", "SHOW_CLOSING_INFO", "PATH_FILTER_LIST", "PATH_FILTER_MOVE_POLICY"
         ] + NotificationType.allCases.map(notificationSoundKey)
     }
 
@@ -504,6 +510,10 @@ enum Settings {
     static var newItemInOwnedRepoMovePolicy: Section
     static let newItemInOwnedRepoMovePolicyHelp = "Automatically move an item to the specified section if it has been created in a repo which you own, even if there is no direct mention of you."
 
+    @MovePlacementUserDefault(key: "PATH_FILTER_MOVE_POLICY", defaultValue: .hidden(cause: .unknown))
+    static var pathFilterMovePolicy: Section
+    static let pathFilterMovePolicyHelp = "Move a pull request to this section when it changes one of the paths listed here, even if you have not participated in it. An item with no unread comments stays hidden while \"Only display items with unread badges\" is on."
+
     /////////////////////////// STRINGS
 
     @UserDefault(key: "DEFAULT_APP_FOR_OPENING_ITEMS", defaultValue: "")
@@ -526,6 +536,10 @@ enum Settings {
     @UserDefault(key: "LABEL_BLACKLIST", defaultValue: [])
     static var labelBlacklist: [String]
     static let labelBlacklistHelp = "Items containing the specified labels will be hidden."
+
+    @UserDefault(key: "PATH_FILTER_LIST", defaultValue: [String]())
+    static var pathFilterList: [String]
+    static let pathFilterListHelp = "Move a pull request when it changes one of these paths. A pattern is relative to the root of each repository, so a broad pattern such as \"docs\" matches in every repository which has File Paths ticked. Use * and ? as wildcards, and a wildcard also crosses a directory separator, so \"*.md\" finds a Markdown file at any depth. A pattern with no wildcard matches whole path components, so \"docs\" reaches docs/a.md but never documentation/a.md."
 
     @UserDefault(key: "HOTKEY_LETTER", defaultValue: "T")
     static var hotkeyLetter: String
