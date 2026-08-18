@@ -7,10 +7,10 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     private var deferredUpdateTimer: PopTimer!
     private var serversDirty = false
     /**
-     Set when the path list gains its first pattern, so that the warning about the long sync is raised
-     only once the user has finished editing the field, rather than on the first keystroke.
+     Set when the path list changes, so that the re-sync of the pull requests whose changed paths are
+     missing is armed once the user has finished editing the field, rather than on every keystroke.
      */
-    private var pathFilterSyncWarningPending = false
+    private var pathFilterListEdited = false
 
     func reset() {
         preferencesDirty = true
@@ -471,8 +471,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
      Marks for re-sync the pull requests whose changed paths are missing, and warns about the longer
      sync that this causes.
 
-     A caller that fires per keystroke passes false, so that the warning waits for the field to finish
-     editing rather than stealing first responder from it.
+     A caller that cannot show a sheet passes false, so that the re-sync still happens silently.
      */
     private func armPathFilterSync(warn: Bool) {
         updatePathFilterNote()
@@ -483,8 +482,6 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
         preferencesDirty = true
         if warn {
             showLongSyncWarning()
-        } else {
-            pathFilterSyncWarningPending = true
         }
     }
 
@@ -1687,7 +1684,10 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
 
     func windowWillClose(_: Notification) {
         // the fallback for a field that still holds focus; a sheet on a closing window would be useless
-        armPathFilterSync(warn: false)
+        if pathFilterListEdited {
+            pathFilterListEdited = false
+            armPathFilterSync(warn: false)
+        }
         advancedReposWindow?.close()
         apiOptionsWindow?.close()
         if ApiServer.someServersHaveAuthTokens(in: DataManager.main), preferencesDirty {
@@ -1764,17 +1764,18 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
             if Settings.pathFilterList != newTokens {
                 Settings.pathFilterList = newTokens
                 deferredUpdateTimer.push()
-                armPathFilterSync(warn: false)
+                updatePathFilterNote()
+                pathFilterListEdited = true
             }
         }
     }
 
     func controlTextDidEndEditing(_ n: Notification) {
-        guard n.object as? NSTextField === pathFilterList, pathFilterSyncWarningPending else {
+        guard n.object as? NSTextField === pathFilterList, pathFilterListEdited else {
             return
         }
-        pathFilterSyncWarningPending = false
-        showLongSyncWarning()
+        pathFilterListEdited = false
+        armPathFilterSync(warn: true)
     }
 
     ///////////// Tabs

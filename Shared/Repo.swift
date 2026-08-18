@@ -265,7 +265,7 @@ final class Repo: DataItem {
         }
 
         var madeChanges = false
-        for repo in allItems(in: moc) where repo.syncFilePaths {
+        for repo in allItems(in: moc, prefetchRelationships: ["pullRequests"]) where repo.syncFilePaths {
             switch repo.displayPolicyForPrs {
             case RepoDisplayPolicy.all.rawValue, RepoDisplayPolicy.mine.rawValue, RepoDisplayPolicy.mineAndPaticipated.rawValue:
                 break
