@@ -228,6 +228,19 @@ final class PullRequest: ListableItem {
         return nil
     }
 
+    override func preferredSectionBasedOnChangedPaths(settings: Settings.Cache) -> Section? {
+        // nil paths mean that no sync ever fetched them, and only the v4 sync fetches them
+        guard settings.useV4API,
+              let section = settings.pathFilterMovePolicy,
+              repo.syncFilePaths,
+              condition == ItemCondition.open.rawValue,
+              changedFilePaths != nil,
+              PathFilter.matchesAny(changedPaths: changedFilePathsList,
+                                    patterns: settings.pathFilterPatterns)
+        else { return nil }
+        return section
+    }
+
     override var shouldHideBecauseOfRepoHidingPolicy: Section.HidingCause? {
         if createdByMe {
             switch repo.itemHidingPolicy {
