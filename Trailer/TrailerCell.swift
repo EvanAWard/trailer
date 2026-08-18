@@ -346,7 +346,7 @@ final class TrailerCell: NSTableCellView {
     }
 
     @objc private func snoozeConfigSelected() {
-        app.showPreferencesWindow(andSelect: 6)
+        app.showPreferencesWindow(andSelect: 7)
     }
 
     @objc private func snoozeSelected(_ sender: NSMenuItem) {
