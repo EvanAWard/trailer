@@ -451,6 +451,44 @@ final class PullRequest: ListableItem {
         return Array(prs)
     }
 
+    /**
+     The open pull requests whose changed file paths the sync needs: the ones which hold none, and
+     the ones whose row changed in this pass. Clears each stored value, because page one appends to
+     nothing.
+     */
+    static func filePathCheckBatch(in moc: NSManagedObjectContext) -> [PullRequest] {
+        let f = NSFetchRequest<PullRequest>(entityName: "PullRequest")
+        f.returnsObjectsAsFaults = false
+        f.includesSubentities = false
+        f.predicate = NSCompoundPredicate(type: .and, subpredicates: [
+            ItemCondition.open.matchingPredicate,
+            ApiServer.lastSyncSucceededPredicate,
+            NSPredicate(format: "repo.syncFilePaths == YES"),
+            NSCompoundPredicate(type: .or, subpredicates: [
+                NSPredicate(format: "changedFilePaths == nil"),
+                PostSyncAction.isNew.matchingPredicate,
+                PostSyncAction.isUpdated.matchingPredicate
+            ])
+        ])
+        let prs = try! moc.fetch(f)
+        for pr in prs {
+            pr.changedFilePaths = nil
+        }
+        return prs
+    }
+
+    /**
+     The pull requests which hold stored changed file paths, so that the sync can clear them when no
+     feature wants them.
+     */
+    static func itemsHoldingChangedPaths(in moc: NSManagedObjectContext) -> [PullRequest] {
+        let f = NSFetchRequest<PullRequest>(entityName: "PullRequest")
+        f.returnsObjectsAsFaults = false
+        f.includesSubentities = false
+        f.predicate = NSPredicate(format: "changedFilePaths != nil")
+        return try! moc.fetch(f)
+    }
+
     func displayedStatusLines(settings: Settings.Cache) -> [PRStatus] {
         let red = settings.statusRed
         let yellow = settings.statusYellow
