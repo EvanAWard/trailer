@@ -15,14 +15,15 @@ final class SetupAssistant: NSWindow, NSWindowDelegate, NSControlTextEditingDele
     @MainActor
     private var newServer: ApiServer {
         get async {
-            if let existing = ApiServer.allApiServers(in: DataManager.main).first {
-                return existing
+            let existing = ApiServer.allApiServers(in: DataManager.main).first
+            guard let server = existing ?? ApiServer.ensureAtLeastGithub(in: DataManager.main) else {
+                fatalError("No API server found")
             }
-            if let created = ApiServer.ensureAtLeastGithub(in: DataManager.main) {
+            if server.objectID.isTemporaryID {
+                // authToken keys the keychain on the object ID, so the server must be saved first
                 await DataManager.saveDB()
-                return created
             }
-            fatalError("No API server found")
+            return server
         }
     }
 
