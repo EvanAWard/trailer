@@ -40,9 +40,7 @@ extension API {
             if contains(.comments) { ret.append("Comments") }
             if contains(.reviewRequests) { ret.append("Requests") }
             if contains(.statuses) { ret.append("Statuses") }
-            if contains(.filePaths) {
-                ret.append("File Paths")
-            }
+            if contains(.filePaths) { ret.append("File Paths") }
             return ret.joined(separator: ", ")
         }
     }
@@ -114,16 +112,14 @@ extension API {
             await Logging.shared.log("Review comment fetch phase complete")
 
             if settings.shouldSyncFilePaths {
-                let pathPrs = newOrUpdatedPrs.filter {
-                    $0.repo.syncFilePaths && $0.condition == ItemCondition.open.rawValue
-                }
-                for (_, serverPrs) in Dictionary(grouping: pathPrs, by: \.apiServer) {
-                    for pr in serverPrs {
-                        pr.changedFilePaths = "" // page one appends to nothing
-                    }
-                    try await GraphQL.update(for: serverPrs, steps: [.filePaths], settings: settings)
-                }
+                let pathPrs = PullRequest.filePathCheckBatch(in: moc)
+                try await GraphQL.update(for: pathPrs, steps: [.filePaths], settings: settings)
                 await Logging.shared.log("PR file path fetch phase complete")
+            } else {
+                // a stored path list must not outlive the feature, whatever route switched it off
+                for pr in PullRequest.itemsHoldingChangedPaths(in: moc) {
+                    pr.changedFilePaths = nil
+                }
             }
         }
 
