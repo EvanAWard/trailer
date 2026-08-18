@@ -20,6 +20,7 @@ final class PullRequest: ListableItem {
     @NSManaged var headLabel: String?
     @NSManaged var baseLabel: String?
     @NSManaged var assignedReviewStatus: Int
+    @NSManaged var changedFilePaths: String?
 
     @NSManaged var statuses: Set<PRStatus>
     @NSManaged var reviews: Set<Review>
@@ -45,6 +46,18 @@ final class PullRequest: ListableItem {
 
     static func mostRecentItemUpdate(in repo: Repo) -> Date {
         repo.pullRequests.reduce(.distantPast) { max($0, $1.updatedAt ?? .distantPast) }
+    }
+
+    /**
+     The changed file paths that the last file path sync stored.
+
+     The setter writes an empty string for an empty list, never nil, because only nil means that no
+     sync ever fetched the paths, and the move in `preferredSectionBasedOnChangedPaths` needs that
+     difference.
+     */
+    var changedFilePathsList: [String] {
+        get { PathFilter.decode(changedFilePaths) }
+        set { changedFilePaths = PathFilter.encode(newValue) }
     }
 
     var closesIssuesList: Set<String> {
