@@ -351,7 +351,7 @@ Token</string>
                                                         <color key="backgroundColor" name="controlBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                         <color key="gridColor" name="gridColor" catalog="System" colorSpace="catalog"/>
                                                         <tableColumns>
-                                                            <tableColumn identifier="repos" editable="NO" width="514" minWidth="100" maxWidth="10000" id="nW5-Ng-D0l">
+                                                            <tableColumn identifier="repos" editable="NO" width="436" minWidth="100" maxWidth="10000" id="nW5-Ng-D0l">
                                                                 <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="Watched Repository">
                                                                     <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
                                                                     <color key="backgroundColor" white="0.33333298560000002" alpha="1" colorSpace="calibratedWhite"/>
@@ -411,6 +411,17 @@ Token</string>
                                                                     <menu key="menu" id="e03-gm-C3c"/>
                                                                 </popUpButtonCell>
                                                                 <sortDescriptor key="sortDescriptorPrototype" selector="compare:" sortKey="displayPolicyForIssues" ascending="NO"/>
+                                                            </tableColumn>
+                                                            <tableColumn identifier="filepaths" width="70" minWidth="10" maxWidth="1000" headerToolTip="Download the changed file paths of the pull requests of this repository. The Paths tab uses them to move items. Needs the v4 API." id="Pth-b0-020" userLabel="File Paths">
+                                                                <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left" title="File Paths">
+                                                                    <color key="textColor" name="headerTextColor" catalog="System" colorSpace="catalog"/>
+                                                                    <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                                                                </tableHeaderCell>
+                                                                <buttonCell key="dataCell" type="check" bezelStyle="regularSquare" imagePosition="left" alignment="center" inset="2" id="Pth-b0-021">
+                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                    <font key="font" metaFont="system"/>
+                                                                </buttonCell>
+                                                                <sortDescriptor key="sortDescriptorPrototype" selector="compare:" sortKey="syncFilePaths" ascending="NO"/>
                                                             </tableColumn>
                                                             <tableColumn identifier="remove" editable="NO" width="25" minWidth="10" maxWidth="3.4028234663852886e+38" id="RB5-FQ-ycS">
                                                                 <tableHeaderCell key="headerCell" lineBreakMode="truncatingTail" borderStyle="border" alignment="left">
