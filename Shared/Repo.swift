@@ -236,6 +236,51 @@ final class Repo: DataItem {
         return Set<String>(labels).sorted()
     }
 
+    /**
+     Whether any repository asks for the file paths of its pull requests.
+
+     This walks the loaded repositories rather than counting a fetch, so that a tick which the user has
+     just made, and which is not saved yet, counts.
+     */
+    @MainActor
+    static func anyReposSyncingFilePaths(in moc: NSManagedObjectContext) -> Bool {
+        allItems(in: moc).contains { $0.syncFilePaths }
+    }
+
+    /**
+     Marks for re-sync the open pull requests which ask for file paths but hold none yet, and reports
+     whether it changed anything.
+
+     This reads the live settings rather than `Settings.cache`, because a write to a setting rebuilds
+     the cache inside a task, so the cache is stale in the moment after a control writes one.
+     */
+    @MainActor
+    @discardableResult
+    static func resetSyncOfMissingChangedPaths(in moc: NSManagedObjectContext) -> Bool {
+        guard Settings.useV4API,
+              !PathFilter.patterns(from: Settings.pathFilterList).isEmpty,
+              Settings.pathFilterMovePolicy.preferredSection != nil
+        else {
+            return false
+        }
+
+        var madeChanges = false
+        for repo in allItems(in: moc) where repo.syncFilePaths {
+            switch repo.displayPolicyForPrs {
+            case RepoDisplayPolicy.all.rawValue, RepoDisplayPolicy.mine.rawValue, RepoDisplayPolicy.mineAndPaticipated.rawValue:
+                break
+            default:
+                // Hide downloads no subscribed items and Authored reaches only your own, so neither can gain paths
+                continue
+            }
+            for pr in repo.pullRequests where pr.condition == ItemCondition.open.rawValue && pr.changedFilePaths == nil {
+                pr.setToUpdatedIfIdle()
+                madeChanges = true
+            }
+        }
+        return madeChanges
+    }
+
     private static let syncableRepoPredicate = NSPredicate(format: "((displayPolicyForPrs > 0 and displayPolicyForPrs < 4) or (displayPolicyForIssues > 0 and displayPolicyForIssues < 4)) and inaccessible != YES")
     static func syncableRepos(in moc: NSManagedObjectContext) -> [Repo] {
         let f = NSFetchRequest<Repo>(entityName: "Repo")
