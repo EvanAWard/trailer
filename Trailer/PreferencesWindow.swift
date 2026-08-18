@@ -6,11 +6,6 @@ import UniformTypeIdentifiers
 final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, NSTableViewDataSource, NSTabViewDelegate, NSControlTextEditingDelegate {
     private var deferredUpdateTimer: PopTimer!
     private var serversDirty = false
-    /**
-     Set when the path list changes, so that the re-sync of the pull requests whose changed paths are
-     missing is armed once the user has finished editing the field, rather than on every keystroke.
-     */
-    private var pathFilterListEdited = false
 
     func reset() {
         preferencesDirty = true
@@ -468,24 +463,6 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     }
 
     /**
-     Marks for re-sync the pull requests whose changed paths are missing, and warns about the longer
-     sync that this causes.
-
-     A caller that cannot show a sheet passes false, so that the re-sync still happens silently.
-     */
-    private func armPathFilterSync(warn: Bool) {
-        updatePathFilterNote()
-
-        guard Repo.resetSyncOfMissingChangedPaths(in: DataManager.main) else {
-            return
-        }
-        preferencesDirty = true
-        if warn {
-            showLongSyncWarning()
-        }
-    }
-
-    /**
      The note under the path controls, which names the setting the move depends on, and warns about the
      two states that leave a moved item out of sight.
      */
@@ -933,7 +910,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     @IBAction private func pathFilterMovePolicySelected(_ sender: NSPopUpButton) {
         Settings.pathFilterMovePolicy = Section(movePolicyMenuIndex: sender.indexOfSelectedItem)
         deferredUpdateTimer.push()
-        armPathFilterSync(warn: true)
+        updatePathFilterNote()
     }
 
     @IBAction private func dontConfirmRemoveAllMergedSelected(_ sender: NSButton) {
@@ -1683,11 +1660,6 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     }
 
     func windowWillClose(_: Notification) {
-        // the fallback for a field that still holds focus; a sheet on a closing window would be useless
-        if pathFilterListEdited {
-            pathFilterListEdited = false
-            armPathFilterSync(warn: false)
-        }
         advancedReposWindow?.close()
         apiOptionsWindow?.close()
         if ApiServer.someServersHaveAuthTokens(in: DataManager.main), preferencesDirty {
@@ -1765,17 +1737,8 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
                 Settings.pathFilterList = newTokens
                 deferredUpdateTimer.push()
                 updatePathFilterNote()
-                pathFilterListEdited = true
             }
         }
-    }
-
-    func controlTextDidEndEditing(_ n: Notification) {
-        guard n.object as? NSTextField === pathFilterList, pathFilterListEdited else {
-            return
-        }
-        pathFilterListEdited = false
-        armPathFilterSync(warn: true)
     }
 
     ///////////// Tabs
@@ -1936,15 +1899,13 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
                 let newValue = (object as? Int ?? 0) != 0
                 if newValue != r.syncFilePaths {
                     r.syncFilePaths = newValue
-                    if newValue {
-                        armPathFilterSync(warn: true)
-                    } else {
+                    if !newValue {
                         // stored paths must not outlive the switch, so a later tick fetches them again
                         for p in r.pullRequests {
                             p.changedFilePaths = nil
                         }
-                        updatePathFilterNote()
                     }
+                    updatePathFilterNote()
                     deferredUpdateTimer.push()
                 }
 
