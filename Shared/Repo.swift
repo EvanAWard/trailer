@@ -247,41 +247,6 @@ final class Repo: DataItem {
         allItems(in: moc).contains { $0.syncFilePaths }
     }
 
-    /**
-     Marks for re-sync the open pull requests which ask for file paths but hold none yet, and reports
-     whether it changed anything.
-
-     This reads the live settings rather than `Settings.cache`, because a write to a setting rebuilds
-     the cache inside a task, so the cache is stale in the moment after a control writes one.
-     */
-    @MainActor
-    @discardableResult
-    static func resetSyncOfMissingChangedPaths(in moc: NSManagedObjectContext) -> Bool {
-        guard Settings.useV4API,
-              !PathFilter.patterns(from: Settings.pathFilterList).isEmpty,
-              Settings.pathFilterMovePolicy.preferredSection != nil
-        else {
-            return false
-        }
-
-        var madeChanges = false
-        for repo in allItems(in: moc, prefetchRelationships: ["pullRequests"]) where repo.syncFilePaths {
-            switch repo.displayPolicyForPrs {
-            case RepoDisplayPolicy.all.rawValue, RepoDisplayPolicy.mine.rawValue, RepoDisplayPolicy.mineAndPaticipated.rawValue:
-                break
-            default:
-                // Hide downloads no subscribed items and Authored reaches only your own, so neither can gain paths
-                continue
-            }
-            // a repeat arming must not re-raise the "only once" sync warning, so only a row this pass actually marks counts
-            for pr in repo.pullRequests where pr.condition == ItemCondition.open.rawValue && pr.changedFilePaths == nil && pr.postSyncAction == PostSyncAction.doNothing.rawValue {
-                pr.setToUpdatedIfIdle()
-                madeChanges = true
-            }
-        }
-        return madeChanges
-    }
-
     private static let syncableRepoPredicate = NSPredicate(format: "((displayPolicyForPrs > 0 and displayPolicyForPrs < 4) or (displayPolicyForIssues > 0 and displayPolicyForIssues < 4)) and inaccessible != YES")
     static func syncableRepos(in moc: NSManagedObjectContext) -> [Repo] {
         let f = NSFetchRequest<Repo>(entityName: "Repo")
