@@ -6,6 +6,23 @@ import TrailerQL
     import UIKit
 #endif
 
+/**
+ The changed file paths which one scan of one server has collected, keyed by pull request. The scan
+ replaces each stored list with what it holds here, and only when its pass ends with no error, so a
+ pass which fails leaves every stored list as it was.
+ */
+final class FilePathCollector {
+    private(set) var paths = [PullRequest: [String]]()
+
+    /**
+     Adds one page of paths. A pull request which changes no file still gets an entry, because an
+     entry means that the server answered for that pull request.
+     */
+    func add(_ paths: [String], for pr: PullRequest) {
+        self.paths[pr, default: []] += paths
+    }
+}
+
 final class PullRequest: ListableItem {
     @NSManaged var lastStatusNotified: String?
     @NSManaged var mergeCommitSha: String?
@@ -81,13 +98,13 @@ final class PullRequest: ListableItem {
         }
     }
 
-    static func sync(from nodes: Lista<Node>, on server: ApiServer, moc: NSManagedObjectContext, parentCache: FetchCache) {
+    static func sync(from nodes: Lista<Node>, on server: ApiServer, moc: NSManagedObjectContext, parentCache: FetchCache, filePaths: FilePathCollector? = nil) {
         syncItems(of: PullRequest.self, from: nodes, on: server, moc: moc, parentCache: parentCache) { pr, node in
             // the file path step answers with no updatedAt, so its payload has to be read above the guard below
             if let files = node.jsonPayload.potentialObject(named: "files") {
                 let paths = files.potentialArray(named: "edges")?
                     .compactMap { $0.potentialObject(named: "node")?.potentialString(named: "path") } ?? []
-                pr.changedFilePaths = PathFilter.appending(paths, to: pr.changedFilePaths)
+                filePaths?.add(paths, for: pr)
             }
 
             guard node.created || node.updated,
@@ -442,11 +459,11 @@ final class PullRequest: ListableItem {
 
     /**
      The open pull requests whose changed file paths the sync needs: the ones which hold none, and
-     the ones whose row changed in this pass. A row already flagged for deletion stays out, because
+     the ones whose row changed in this pass. A row which is flagged for deletion stays out, because
      the fetch clears that flag and the row would then survive the pass.
 
-     The stored value is not cleared here. `GraphQL.NodeScanner` replaces it as a whole, once the
-     answer for that pull request is complete.
+     The stored value is not cleared here. The scan replaces it as a whole, once the answer for that
+     pull request is complete.
      */
     static func filePathCheckBatch(in moc: NSManagedObjectContext) -> [PullRequest] {
         let f = NSFetchRequest<PullRequest>(entityName: "PullRequest")
