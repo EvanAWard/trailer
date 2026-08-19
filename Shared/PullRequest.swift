@@ -442,8 +442,11 @@ final class PullRequest: ListableItem {
 
     /**
      The open pull requests whose changed file paths the sync needs: the ones which hold none, and
-     the ones whose row changed in this pass. Clears each stored value, because page one appends to
-     nothing.
+     the ones whose row changed in this pass. A row already flagged for deletion stays out, because
+     the fetch clears that flag and the row would then survive the pass.
+
+     The stored value is not cleared here. `GraphQL.NodeScanner` replaces it as a whole, once the
+     answer for that pull request is complete.
      */
     static func filePathCheckBatch(in moc: NSManagedObjectContext) -> [PullRequest] {
         let f = NSFetchRequest<PullRequest>(entityName: "PullRequest")
@@ -452,6 +455,7 @@ final class PullRequest: ListableItem {
         f.predicate = NSCompoundPredicate(type: .and, subpredicates: [
             ItemCondition.open.matchingPredicate,
             ApiServer.lastSyncSucceededPredicate,
+            PostSyncAction.delete.excludingPredicate,
             NSPredicate(format: "repo.syncFilePaths == YES"),
             NSCompoundPredicate(type: .or, subpredicates: [
                 NSPredicate(format: "changedFilePaths == nil"),
@@ -459,11 +463,7 @@ final class PullRequest: ListableItem {
                 PostSyncAction.isUpdated.matchingPredicate
             ])
         ])
-        let prs = try! moc.fetch(f)
-        for pr in prs {
-            pr.changedFilePaths = nil
-        }
-        return prs
+        return try! moc.fetch(f)
     }
 
     /**
