@@ -91,22 +91,6 @@ enum PathFilter {
     }
 
     /**
-     Joins one page of changed paths onto a stored value, so that following a page does not decode
-     and re-join the whole list each time. An empty page gives an empty string, never nil, for the
-     same reason `encode` does.
-     */
-    static func appending(_ paths: [String], to stored: String?) -> String {
-        let page = encode(paths)
-        if page.isEmpty {
-            return stored ?? ""
-        }
-        guard let stored, !stored.isEmpty else {
-            return page
-        }
-        return stored + separator + page
-    }
-
-    /**
      Splits a stored value back into a list of changed paths.
      */
     static func decode(_ stored: String?) -> [String] {
