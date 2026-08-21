@@ -70,6 +70,13 @@ enum Settings {
         let hideUncommentedItems = Settings.hideUncommentedItems
         let notifyOnItemReactions = Settings.notifyOnItemReactions
         let notifyOnCommentReactions = Settings.notifyOnCommentReactions
+        let disableAllCommentNotifications = Settings.disableAllCommentNotifications
+        let notifyOnCodeComments = Settings.notifyOnCodeComments
+        let notifyOnAllCodeComments = Settings.notifyOnAllCodeComments
+        let notifyOnCommentReplies = Settings.notifyOnCommentReplies
+        let notifyOnAllCommentReplies = Settings.notifyOnAllCommentReplies
+        let notifyOnItemComments = Settings.notifyOnItemComments
+        let notifyOnAllItemComments = Settings.notifyOnAllItemComments
         let notifyOnStatusUpdates = Settings.notifyOnStatusUpdates
         let shouldHideDrafts = Settings.draftHandlingPolicy == .hide
         let autoRemoveClosedItems = Settings.autoRemoveClosedItems
@@ -191,7 +198,8 @@ enum Settings {
             "AUTO_SNOOZE_DAYS", "HIDE_MENUBAR_COUNTS", "AUTO_ADD_NEW_REPOS", "AUTO_REMOVE_DELETED_REPOS", "MARK_PRS_AS_UNREAD_ON_NEW_COMMITS", "SHOW_LABELS", "DISPLAY_REVIEW_CHANGE_REQUESTS", "SHOW_RELATIVE_DATES", "QUERY_AUTHORED_PRS", "QUERY_AUTHORED_ISSUES",
             "DISPLAY_MILESTONES", "DEFAULT_APP_FOR_OPENING_WEB", "DEFAULT_APP_FOR_OPENING_ITEMS", "HIDE_ARCHIVED_REPOS", "DRAFT_HANDLING_POLICY", "MARK_UNMERGEABLE_ITEMS", "SHOW_PR_LINES", "SCAN_CLOSED_AND_MERGED", "USE_V4_API", "REQUESTED_TEAM_REVIEWS",
             "SHOW_STATUSES_GREEN", "SHOW_STATUSES_GRAY", "SHOW_STATUSES_YELLOW", "SHOW_STATUSES_RED", "SHOW_BASE_AND_HEAD_BRANCHES", "PERSISTED_TAB_FILTERS", "PR_V4_SYNC_PAGE", "ISSUE_V4_SYNC_PAGE", "V4_THREAD_SYNC", "ASSIGNED_PR_TEAM_HANDLING_POLICY",
-            "ASSIGNED_REVIEW_TEAM_HANDLING_POLICY", "AUTO_REMOVE_MERGED_ITEMS", "AUTO_REMOVE_CLOSED_ITEMS", "LABELS_INCLUSION_RULE", "AUTHORS_INCLUSION_RULE", "COMMENTER_INCLUSION_RULE", "SHOW_CLOSING_INFO", "PATH_FILTER_LIST", "PATH_FILTER_MOVE_POLICY"
+            "ASSIGNED_REVIEW_TEAM_HANDLING_POLICY", "AUTO_REMOVE_MERGED_ITEMS", "AUTO_REMOVE_CLOSED_ITEMS", "LABELS_INCLUSION_RULE", "AUTHORS_INCLUSION_RULE", "COMMENTER_INCLUSION_RULE", "SHOW_CLOSING_INFO", "PATH_FILTER_LIST", "PATH_FILTER_MOVE_POLICY",
+            "NOTIFY_ON_CODE_COMMENTS", "NOTIFY_ON_ALL_CODE_COMMENTS", "NOTIFY_ON_COMMENT_REPLIES", "NOTIFY_ON_ALL_COMMENT_REPLIES", "NOTIFY_ON_ITEM_COMMENTS", "NOTIFY_ON_ALL_ITEM_COMMENTS"
         ] + NotificationType.allCases.map(notificationSoundKey)
     }
 
@@ -672,6 +680,34 @@ enum Settings {
     @UserDefault(key: "DISABLE_ALL_COMMENT_NOTIFICATIONS", defaultValue: false)
     static var disableAllCommentNotifications: Bool
     static let disableAllCommentNotificationsHelp = "Do not get notified about any comments at all."
+
+    // The six settings below default to true, where the review notification settings default to false.
+    // Reviews notified nothing until the user opted in, and comments notified everything, so in both
+    // cases the default is the behaviour the setting replaced.
+
+    @UserDefault(key: "NOTIFY_ON_CODE_COMMENTS", defaultValue: true)
+    static var notifyOnCodeComments: Bool
+    static let notifyOnCodeCommentsHelp = "Issue a notification when someone starts a review thread on the code of a PR I created."
+
+    @UserDefault(key: "NOTIFY_ON_ALL_CODE_COMMENTS", defaultValue: true)
+    static var notifyOnAllCodeComments: Bool
+    static let notifyOnAllCodeCommentsHelp = "Do this for all items, not just those created by me."
+
+    @UserDefault(key: "NOTIFY_ON_COMMENT_REPLIES", defaultValue: true)
+    static var notifyOnCommentReplies: Bool
+    static let notifyOnCommentRepliesHelp = "Issue a notification when someone replies in a review thread I have commented in."
+
+    @UserDefault(key: "NOTIFY_ON_ALL_COMMENT_REPLIES", defaultValue: true)
+    static var notifyOnAllCommentReplies: Bool
+    static let notifyOnAllCommentRepliesHelp = "Do this for all threads, not just those I have commented in."
+
+    @UserDefault(key: "NOTIFY_ON_ITEM_COMMENTS", defaultValue: true)
+    static var notifyOnItemComments: Bool
+    static let notifyOnItemCommentsHelp = "Issue a notification when someone comments in the conversation of an item I created, rather than on its code."
+
+    @UserDefault(key: "NOTIFY_ON_ALL_ITEM_COMMENTS", defaultValue: true)
+    static var notifyOnAllItemComments: Bool
+    static let notifyOnAllItemCommentsHelp = "Do this for all items, not just those created by me."
 
     @UserDefault(key: "NOTIFY_ON_STATUS_UPDATES", defaultValue: false)
     static var notifyOnStatusUpdates: Bool
