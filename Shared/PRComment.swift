@@ -118,11 +118,50 @@ final class PRComment: DataItem {
             parent.wakeUp(settings: settings)
         }
 
-        if Settings.disableAllCommentNotifications {
+        if settings.disableAllCommentNotifications {
+            return
+        }
+
+        guard shouldNotify(settings: settings) else {
+            let commentNodeId = nodeId ?? "<no ID>"
+            Task {
+                await Logging.shared.log("Ignoring comment \(commentNodeId): the comment notification settings exclude it")
+            }
             return
         }
 
         NotificationQueue.add(type: .newComment, for: self)
+    }
+
+    /** True when the comment sits in a review thread rather than starting one. Only the v4 path can tell. */
+    private var isReply: Bool {
+        replyToNodeId != nil
+    }
+
+    /** True when the comment notification settings ask for a comment of this kind, on an item of this owner. */
+    private func shouldNotify(settings: Settings.Cache) -> Bool {
+        if isReply {
+            return settings.notifyOnAllCommentReplies || (settings.notifyOnCommentReplies && threadHoldsMyComment())
+        }
+        if isCodeComment {
+            return settings.notifyOnAllCodeComments || (settings.notifyOnCodeComments && parent?.createdByMe == true)
+        }
+        return settings.notifyOnAllItemComments || (settings.notifyOnItemComments && parent?.createdByMe == true)
+    }
+
+    /**
+     True when the store holds a comment of mine in the same review thread. GitHub names the first
+     comment of a thread as the reply parent, never the comment somebody answered, so this is the
+     closest reading of "they replied to me" that the API offers.
+     */
+    private func threadHoldsMyComment() -> Bool {
+        guard let replyToNodeId, let moc = managedObjectContext, let me = apiServer.userNodeId else {
+            return false
+        }
+        let f = NSFetchRequest<PRComment>(entityName: "PRComment")
+        f.fetchLimit = 1
+        f.predicate = NSPredicate(format: "userNodeId == %@ and (nodeId == %@ or replyToNodeId == %@)", me, replyToNodeId, replyToNodeId)
+        return ((try? moc.count(for: f)) ?? 0) > 0
     }
 
     private func fill(from info: TypedJson.Entry) {
