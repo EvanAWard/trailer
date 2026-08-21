@@ -52,6 +52,8 @@ final class PRComment: DataItem {
             let info = node.jsonPayload
             comment.body = info.potentialString(named: "body")
             comment.webUrl = info.potentialString(named: "url")
+            comment.isCodeComment = node.elementType == "PullRequestReviewComment"
+            comment.replyToNodeId = info.potentialObject(named: "replyTo")?.potentialString(named: "replyToNodeId")
 
             if let userInfo = info.potentialObject(named: "author") {
                 comment.userName = userInfo.potentialString(named: "login")

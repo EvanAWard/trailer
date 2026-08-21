@@ -215,7 +215,10 @@ enum GraphQL {
     }
 
     private static func commentGroup(for typeName: String, profile: Profile) -> Group {
-        Group("comments", paging: profile.largePageSize) {
+        // Only a review comment has a reply parent, and the alias keeps the DSL from reading that parent
+        // as a node of its own: it builds a node from any payload which carries both `id` and `__typename`.
+        let isReviewComment = typeName == "PullRequestReviewComment"
+        return Group("comments", paging: profile.largePageSize) {
             Fragment(on: typeName) {
                 Field.id
                 Field("body")
@@ -223,6 +226,9 @@ enum GraphQL {
                 Field("createdAt")
                 Field("updatedAt")
                 authorGroup
+                if isReviewComment {
+                    Group("replyTo") { Field("replyToNodeId: id") }
+                }
             }
         }
     }
