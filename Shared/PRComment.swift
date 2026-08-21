@@ -12,6 +12,8 @@ final class PRComment: DataItem {
     @NSManaged var webUrl: String?
     @NSManaged var reactionsUrl: String?
     @NSManaged var pendingReactionScan: Bool
+    @NSManaged var isCodeComment: Bool
+    @NSManaged var replyToNodeId: String?
 
     @NSManaged var pullRequest: PullRequest?
     @NSManaged var issue: Issue?
