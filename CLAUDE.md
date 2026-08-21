@@ -66,7 +66,7 @@ Notes that will save you a cycle:
 
 | Target | Notes |
 |---|---|
-| `Trailer` | **In scope.** macOS menu-bar app, built as `Trailer-E.app` (module name still `Trailer`). `LSUIElement`, XIB-based UI, Sparkle auto-update. |
+| `Trailer` | **In scope.** macOS menu-bar app, built as `Trailer-E.app` (module name still `Trailer`). `LSUIElement`, XIB-based UI, Sparkle updater (disabled). |
 | `TrailerLauncher` | **In scope.** Tiny macOS helper embedded in `Trailer-E.app`, used for launch-at-login. |
 | `PocketTrailer` | *Out of scope.* iOS/iPadOS app, storyboard-based. |
 | `PocketTrailer WatchKit App` | *Out of scope.* watchOS app. Thin client — no database of its own. |
@@ -206,8 +206,9 @@ Upstream `ptsochantaris/*` packages, several of which were split out of this cod
 (GraphQL DSL), **TrailerJson** (`TypedJson.Entry` and its `potentialString/potentialInt/potentialObject`
 accessors — all JSON parsing goes through these), **Lista** (linked list used on hot paths),
 **Semalot** (ticket semaphore), **KeyVine** (keychain), **Maintini** (keeps the app alive during
-background work), **PopTimer** (debounce). Plus **Sparkle** for macOS updates (macOS target only;
-feed `https://ptsochantaris.github.io/trailer/appcast.xml`).
+background work), **PopTimer** (debounce). Plus **Sparkle** for macOS updates (macOS target only).
+This fork never starts the updater (`startingUpdater: false` in `MacAppDelegate`) and disables the
+Preferences auto-check checkbox. `SUFeedURL` still points at upstream's appcast.
 
 ## Conventions and gotchas
 

@@ -1282,6 +1282,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
         checkForUpdatesSelector.integerValue = interval
         checkForUpdatesAutomatically.integerValue = setting.asInt
         checkForUpdatesLabel.stringValue = interval < 2 ? "Check every hour" : "Check every \(interval) hours"
+        checkForUpdatesAutomatically.isEnabled = false
     }
 
     @IBAction private func checkForUpdatesIntervalChanged(_ sender: NSStepper) {
