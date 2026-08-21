@@ -61,7 +61,7 @@
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
-	<string>Trailer.Application</string>
+	<string>$(PRODUCT_MODULE_NAME).Application</string>
 	<key>NSUserNotificationAlertStyle</key>
 	<string>banner</string>
 	<key>SUFeedURL</key>

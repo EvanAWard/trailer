@@ -167,7 +167,7 @@ enum Settings {
         }
     }
 
-    private static let sharedDefaults = UserDefaults(suiteName: "group.Trailer")!
+    private static let sharedDefaults = UserDefaults(suiteName: appGroupIdentifier)!
 
     private static var allFields: [String] {
         [
