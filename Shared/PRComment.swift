@@ -63,12 +63,13 @@ final class PRComment: DataItem {
         }
     }
 
-    static func syncComments(from data: [TypedJson.Entry]?, parent: ListableItem, moc: NSManagedObjectContext) async {
+    static func syncComments(from data: [TypedJson.Entry]?, parent: ListableItem, moc: NSManagedObjectContext, isCode: Bool) async {
         let parentId = parent.objectID
         await v3items(with: data, type: PRComment.self, serverId: parent.apiServer.objectID, moc: moc) { item, info, newOrUpdated, syncMoc in
             if newOrUpdated, let parent = try? syncMoc.existingObject(with: parentId) as? ListableItem {
                 item.pullRequest = parent.asPr
                 item.issue = parent.asIssue
+                item.isCodeComment = isCode
                 item.fill(from: info)
                 item.fastForwardIfNeeded(parent: parent)
                 item.reactionsUrl = info.potentialObject(named: "reactions")?.potentialString(named: "url")
