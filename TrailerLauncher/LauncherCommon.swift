@@ -6,12 +6,12 @@ extension Notification.Name {
 
 @MainActor
 enum LauncherCommon {
-    static let helperAppId = "com.housetrip.Trailer.Launcher"
+    static let helperAppId = "com.eaw.Trailer.Launcher"
     static var isHelperRunning: Bool {
         NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == helperAppId }
     }
 
-    static let mainAppId = "com.housetrip.Trailer"
+    static let mainAppId = "com.eaw.Trailer"
     static var isMainAppRunning: Bool {
         NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == mainAppId }
     }

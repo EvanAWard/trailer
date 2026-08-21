@@ -65,7 +65,7 @@ lightweight/inferred (`NSMigratePersistentStoresAutomaticallyOption`). A model c
 `.xcdatamodel` version and bumping `.xccurrentversion` — never editing an existing version.
 
 Store lives in `DataManager.dataFilesDirectory` (`Shared/DataManager.swift`): the
-`group.com.EvanAWard.Trailer` app-group container on iOS, `~/Library/Application Support/<dataDirectoryName>`
+`group.com.eaw.Trailer` app-group container on iOS, `~/Library/Application Support/<dataDirectoryName>`
 on macOS, where `dataDirectoryName` is in `Shared/Globals.swift`. It is deliberately **not**
 `com.housetrip.Trailer`, so this fork does not share a database with an installed release Trailer.
 That macOS path is the developer's **live** database — treat it as production data.
@@ -124,7 +124,7 @@ Every list in every platform is then just a fetch request from
 
 ### Settings and the settings cache
 
-Settings live in `UserDefaults(suiteName: appGroupIdentifier)` — `group.com.EvanAWard.Trailer`
+Settings live in `UserDefaults(suiteName: appGroupIdentifier)` — `group.com.eaw.Trailer`
 (`Shared/Globals.swift`) — behind property wrappers in
 `Shared/Settings.swift` (`@UserDefault`, `@OptionalUserDefault`, `@EnumUserDefault`,
 `@MovePlacementUserDefault`, `@AssignmentPlacementUserDefault`). Conventions:
@@ -147,7 +147,7 @@ intentional, not sloppiness.
 ### Credentials
 
 `ApiServer.authToken` is **not** stored in Core Data. It reads and writes the keychain through the
-`keyVine` global in `Shared/Globals.swift` (KeyVine package, access group `com.housetrip.Trailer`, team
+`keyVine` global in `Shared/Globals.swift` (KeyVine package, access group `com.eaw.Trailer`, team
 `63VU3T7V3Q`, shared by the macOS and iOS apps). Tokens found in the old Core Data field are migrated to
 the keychain on first access and the field is blanked.
 
