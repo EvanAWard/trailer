@@ -115,6 +115,13 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     @IBOutlet private var teamMentionMovePolicy: NSPopUpButton!
     @IBOutlet private var newItemInOwnedRepoMovePolicy: NSPopUpButton!
     @IBOutlet private var highlightItemsWithNewCommits: NSButton!
+    @IBOutlet private var notifyOnCodeComments: NSButton!
+    @IBOutlet private var notifyOnAllCodeComments: NSButton!
+    @IBOutlet private var notifyOnCommentReplies: NSButton!
+    @IBOutlet private var notifyOnAllCommentReplies: NSButton!
+    @IBOutlet private var notifyOnItemComments: NSButton!
+    @IBOutlet private var notifyOnAllItemComments: NSButton!
+    @IBOutlet private var commentNotificationNote: NSTextField!
 
     // Paths
     @IBOutlet private var pathFilterList: NSTokenField!
@@ -509,6 +516,42 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
         pathFilterNote.toolTip = text
     }
 
+    /**
+     The dim state of the three "…or All" boxes and of the reply pair, and the note which says why the
+     reply pair cannot act. A control which cannot act should not accept input, and a box the user
+     cannot reach must not keep a stored `true`.
+     */
+    private func updateCommentNotificationNote() {
+        if !Settings.notifyOnCodeComments {
+            Settings.notifyOnAllCodeComments = false
+        }
+        if !Settings.notifyOnCommentReplies {
+            Settings.notifyOnAllCommentReplies = false
+        }
+        if !Settings.notifyOnItemComments {
+            Settings.notifyOnAllItemComments = false
+        }
+
+        let v4 = Settings.useV4API
+
+        notifyOnCodeComments.integerValue = Settings.notifyOnCodeComments.asInt
+        notifyOnCommentReplies.integerValue = Settings.notifyOnCommentReplies.asInt
+        notifyOnItemComments.integerValue = Settings.notifyOnItemComments.asInt
+        notifyOnAllCodeComments.integerValue = Settings.notifyOnAllCodeComments.asInt
+        notifyOnAllCommentReplies.integerValue = Settings.notifyOnAllCommentReplies.asInt
+        notifyOnAllItemComments.integerValue = Settings.notifyOnAllItemComments.asInt
+
+        notifyOnCommentReplies.isEnabled = v4
+        notifyOnAllCodeComments.isEnabled = Settings.notifyOnCodeComments
+        notifyOnAllCommentReplies.isEnabled = v4 && Settings.notifyOnCommentReplies
+        notifyOnAllItemComments.isEnabled = Settings.notifyOnItemComments
+
+        let text = v4 ? "" : "Matching replies to your threads needs the v4 API."
+        commentNotificationNote.stringValue = text
+        commentNotificationNote.textColor = .disabledControlTextColor
+        commentNotificationNote.toolTip = v4 ? nil : text
+    }
+
     @IBAction private func v4APISwitchChanged(_ sender: NSButton) {
         if sender.integerValue == 1, let error = API.canUseV4API(for: DataManager.main) {
             sender.integerValue = 0
@@ -533,6 +576,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
             sender.isEnabled = false
             updatePathFilterNote()
             reloadRepositories()
+            updateCommentNotificationNote()
             performFullReload()
         } else {
             sender.integerValue = 1 - sender.integerValue
@@ -600,6 +644,12 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
         openPrAtFirstUnreadComment.toolTip = Settings.openPrAtFirstUnreadCommentHelp
         assumeCommentsBeforeMineAreRead.toolTip = Settings.assumeReadItemIfUserHasNewerCommentsHelp
         disableAllCommentNotifications.toolTip = Settings.disableAllCommentNotificationsHelp
+        notifyOnCodeComments.toolTip = Settings.notifyOnCodeCommentsHelp
+        notifyOnAllCodeComments.toolTip = Settings.notifyOnAllCodeCommentsHelp
+        notifyOnCommentReplies.toolTip = Settings.notifyOnCommentRepliesHelp
+        notifyOnAllCommentReplies.toolTip = Settings.notifyOnAllCommentRepliesHelp
+        notifyOnItemComments.toolTip = Settings.notifyOnItemCommentsHelp
+        notifyOnAllItemComments.toolTip = Settings.notifyOnAllItemCommentsHelp
         showStatusItems.toolTip = Settings.showStatusItemsHelp
         statusItemRefreshCounter.toolTip = Settings.statusItemRefreshBatchSizeHelp
         statusItemRescanLabel.toolTip = Settings.statusItemRefreshBatchSizeHelp
@@ -816,6 +866,8 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
         updateImportExportSettings()
 
         updateReviewOptions()
+
+        updateCommentNotificationNote()
 
         updateActivity()
 
@@ -1105,6 +1157,36 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
 
     @IBAction private func disableAllCommentNotificationsSelected(_ sender: NSButton) {
         Settings.disableAllCommentNotifications = (sender.integerValue == 1)
+    }
+
+    @IBAction private func notifyOnCodeCommentsSelected(_ sender: NSButton) {
+        Settings.notifyOnCodeComments = (sender.integerValue == 1)
+        updateCommentNotificationNote()
+    }
+
+    @IBAction private func notifyOnAllCodeCommentsSelected(_ sender: NSButton) {
+        Settings.notifyOnAllCodeComments = (sender.integerValue == 1)
+        updateCommentNotificationNote()
+    }
+
+    @IBAction private func notifyOnCommentRepliesSelected(_ sender: NSButton) {
+        Settings.notifyOnCommentReplies = (sender.integerValue == 1)
+        updateCommentNotificationNote()
+    }
+
+    @IBAction private func notifyOnAllCommentRepliesSelected(_ sender: NSButton) {
+        Settings.notifyOnAllCommentReplies = (sender.integerValue == 1)
+        updateCommentNotificationNote()
+    }
+
+    @IBAction private func notifyOnItemCommentsSelected(_ sender: NSButton) {
+        Settings.notifyOnItemComments = (sender.integerValue == 1)
+        updateCommentNotificationNote()
+    }
+
+    @IBAction private func notifyOnAllItemCommentsSelected(_ sender: NSButton) {
+        Settings.notifyOnAllItemComments = (sender.integerValue == 1)
+        updateCommentNotificationNote()
     }
 
     @IBAction private func notifyOnStatusUpdatesSelected(_ sender: NSButton) {
