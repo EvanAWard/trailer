@@ -518,8 +518,9 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
 
     /**
      The dim state of the three "…or All" boxes and of the reply pair, and the note which says why the
-     reply pair cannot act. A control which cannot act should not accept input, and a box the user
-     cannot reach must not keep a stored `true`.
+     reply pair cannot act. A control which cannot act should not accept input, and an "…or All" box
+     whose base box is off must not keep a stored `true`. A pair disabled only because the v4 API is off
+     keeps its stored values, so the user's choice survives a switch to v3 and back.
      */
     private func updateCommentNotificationNote() {
         if !Settings.notifyOnCodeComments {

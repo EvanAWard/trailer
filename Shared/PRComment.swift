@@ -124,8 +124,9 @@ final class PRComment: DataItem {
 
         guard shouldNotify(settings: settings) else {
             let commentNodeId = nodeId ?? "<no ID>"
+            let kind = notificationKind
             Task {
-                await Logging.shared.log("Ignoring comment \(commentNodeId): the comment notification settings exclude it")
+                await Logging.shared.log("Ignoring \(kind) \(commentNodeId): the comment notification settings exclude it")
             }
             return
         }
@@ -138,7 +139,18 @@ final class PRComment: DataItem {
         replyToNodeId != nil
     }
 
-    /** True when the comment notification settings ask for a comment of this kind, on an item of this owner. */
+    /** The pair of settings which decides this comment, named for the log. Read in the same order as `shouldNotify`. */
+    private var notificationKind: String {
+        if isReply {
+            return "reply"
+        }
+        if isCodeComment {
+            return "code comment"
+        }
+        return "item comment"
+    }
+
+    /** True when the comment notification settings ask for a comment of this kind, given who owns the item or who is in the thread. */
     private func shouldNotify(settings: Settings.Cache) -> Bool {
         if isReply {
             return settings.notifyOnAllCommentReplies || (settings.notifyOnCommentReplies && threadHoldsMyComment())
