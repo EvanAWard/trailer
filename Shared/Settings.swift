@@ -944,6 +944,23 @@ enum Settings {
         }
     }
 
+    //////////////////////// Notification sounds
+
+    /** The key that holds the sound for one kind of notification. The prefix persists, so it must not change. */
+    private static func notificationSoundKey(for type: NotificationType) -> String {
+        "NOTIFICATION_SOUND_" + type.rawValue
+    }
+
+    #if os(macOS)
+        static func notificationSound(for type: NotificationType) -> NotificationSound {
+            NotificationSound(storedValue: Settings[notificationSoundKey(for: type)] as? String)
+        }
+
+        static func setNotificationSound(_ sound: NotificationSound, for type: NotificationType) {
+            Settings[notificationSoundKey(for: type)] = sound.storedValue
+        }
+    #endif
+
     @propertyWrapper
     struct UserDefault<Value> {
         let key: String
