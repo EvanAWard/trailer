@@ -46,7 +46,11 @@ extension NSAttributedString.Key {
 import KeyVine
 import TrailerJson
 
-nonisolated(unsafe) var keyVine = KeyVine(appIdentifier: "com.housetrip.Trailer", teamId: "X727JSJUGJ")
+let appGroupIdentifier = "group.com.eaw.Trailer"
+
+let dataDirectoryName = "com.eaw.Trailer"
+
+nonisolated(unsafe) var keyVine = KeyVine(appIdentifier: "com.eaw.Trailer", teamId: "63VU3T7V3Q")
 
 @MainActor var preferencesDirty = false
 @MainActor var lastRepoCheck = Date.distantPast

@@ -450,10 +450,10 @@ enum DataManager {
 
     static let dataFilesDirectory: URL = {
         #if os(iOS)
-            let finalURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.Trailer")!
+            let finalURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier)!
         #else
             let appSupportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).last!
-            let finalURL = appSupportURL.appendingPathComponent("com.housetrip.Trailer")
+            let finalURL = appSupportURL.appendingPathComponent(dataDirectoryName)
         #endif
         Task {
             await Logging.shared.log("Files in \(finalURL.path)")

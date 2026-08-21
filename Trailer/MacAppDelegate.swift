@@ -155,7 +155,7 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, N
     }
 
     @MainActor
-    private lazy var updater = SPUStandardUpdaterController(startingUpdater: Settings.checkForUpdatesAutomatically, updaterDelegate: self, userDriverDelegate: nil)
+    private lazy var updater = SPUStandardUpdaterController(startingUpdater: false, updaterDelegate: self, userDriverDelegate: nil)
 
     @MainActor
     func selected(_ item: ListableItem, alternativeSelect: Bool, window: NSWindow?) {
