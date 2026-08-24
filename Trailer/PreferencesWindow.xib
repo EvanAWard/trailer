@@ -1251,14 +1251,14 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                                                                 </connections>
                                                             </tokenField>
                                                             <box fixedFrame="YES" borderType="none" title="Items that change these paths, move to…" translatesAutoresizingMaskIntoConstraints="NO" id="Pth-b0-008">
-                                                                <rect key="frame" x="390" y="16" width="365" height="51"/>
+                                                                <rect key="frame" x="390" y="41" width="365" height="40"/>
                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                 <view key="contentView" id="Pth-b0-009">
-                                                                    <rect key="frame" x="0.0" y="0.0" width="365" height="39"/>
+                                                                    <rect key="frame" x="0.0" y="0.0" width="365" height="28"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                     <subviews>
                                                                         <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Pth-b0-010">
-                                                                            <rect key="frame" x="-2" y="14" width="365" height="26"/>
+                                                                            <rect key="frame" x="-2" y="2" width="365" height="26"/>
                                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                             <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="Pth-b0-011">
                                                                                 <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -1280,9 +1280,9 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                                                                 </view>
                                                             </box>
                                                             <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" setsMaxLayoutWidthAtFirstLayout="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Pth-b0-018">
-                                                                <rect key="frame" x="771" y="18" width="205" height="48"/>
+                                                                <rect key="frame" x="392" y="8" width="365" height="28"/>
                                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                                <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="center" title="Applies to the repositories with File Paths ticked." id="Pth-b0-019">
+                                                                <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Applies to the repositories with File Paths ticked." id="Pth-b0-019">
                                                                     <font key="font" size="9" name="HelveticaNeue"/>
                                                                     <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                                                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
