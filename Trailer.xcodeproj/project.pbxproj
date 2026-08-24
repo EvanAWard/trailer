@@ -197,6 +197,9 @@
 		16F0BAD623A53EB4002EC348 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16F0BAD523A53EB4002EC348 /* Colors.swift */; };
 		16F0BAD723A53EBF002EC348 /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16F0BAD523A53EB4002EC348 /* Colors.swift */; };
 		16F413701BA5850A006B0195 /* RepoCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16F4136F1BA5850A006B0195 /* RepoCell.swift */; };
+		16AA05000000000000000001 /* NotificationSounds.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16AA04000000000000000001 /* NotificationSounds.swift */; };
+		16AA05000000000000000002 /* NotificationSoundsPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16AA04000000000000000002 /* NotificationSoundsPane.swift */; };
+		16AA05000000000000000003 /* NotificationSoundLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16AA04000000000000000003 /* NotificationSoundLibrary.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -455,6 +458,9 @@
 		16F51FA019DE8C78007B0BB1 /* PRIVACY */ = {isa = PBXFileReference; lastKnownFileType = text; lineEnding = 0; path = PRIVACY; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = "<none>"; };
 		16FEB781283C4E320029FB0F /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		16FEB783283C4E320029FB0F /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		16AA04000000000000000001 /* NotificationSounds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSounds.swift; sourceTree = "<group>"; };
+		16AA04000000000000000002 /* NotificationSoundsPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSoundsPane.swift; sourceTree = "<group>"; };
+		16AA04000000000000000003 /* NotificationSoundLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSoundLibrary.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -514,6 +520,8 @@
 				16A0B0361A48AC7900B3452D /* MacAppDelegate.swift */,
 				16358F3A1CF138190055F849 /* DataSource.swift */,
 				16358F3C1CF206CE0055F849 /* MenuBarSet.swift */,
+				16AA04000000000000000001 /* NotificationSounds.swift */,
+				16AA04000000000000000003 /* NotificationSoundLibrary.swift */,
 			);
 			name = Core;
 			sourceTree = "<group>";
@@ -606,6 +614,7 @@
 				168BC6C217EC2DF000BC4584 /* MainMenu.xib */,
 				160FB13F1AE3F78E00EB5C8E /* PreferencesWindow.swift */,
 				160FB1411AE3F7C700EB5C8E /* PreferencesWindow.xib */,
+				16AA04000000000000000002 /* NotificationSoundsPane.swift */,
 				1655FD592A69CA0D0087F439 /* ApiMonitorWindow.swift */,
 				1655FD5A2A69CA0D0087F439 /* ApiMonitorWindow.xib */,
 				16DB793B1E326C950076A36D /* AdvancedReposWindow.swift */,
@@ -1314,6 +1323,9 @@
 				164E4C092A7EABCE00BFE065 /* NotificationManager.swift in Sources */,
 				1694008C1E7AAE32002C5DAD /* Reaction.swift in Sources */,
 				16A7246E2A901815005B32AB /* HiddenItemWindow.swift in Sources */,
+				16AA05000000000000000001 /* NotificationSounds.swift in Sources */,
+				16AA05000000000000000002 /* NotificationSoundsPane.swift in Sources */,
+				16AA05000000000000000003 /* NotificationSoundLibrary.swift in Sources */,
 			);
 		};
 		16DEA91E235C6D7C004589B3 /* Sources */ = {

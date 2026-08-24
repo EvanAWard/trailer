@@ -128,7 +128,7 @@ enum PostSyncAction: Int {
     }
 }
 
-enum NotificationType {
+enum NotificationType: String, CaseIterable {
     case newComment, newPr, prMerged, prReopened, newMention, prClosed, newRepoSubscribed, newRepoAnnouncement, newPrAssigned, newStatus, newIssue, issueClosed, newIssueAssigned, issueReopened, assignedForReview, changesRequested, changesApproved, changesDismissed, newReaction, assignedToTeamForReview
 }
 

@@ -186,7 +186,7 @@ enum Settings {
             "DISPLAY_MILESTONES", "DEFAULT_APP_FOR_OPENING_WEB", "DEFAULT_APP_FOR_OPENING_ITEMS", "HIDE_ARCHIVED_REPOS", "DRAFT_HANDLING_POLICY", "MARK_UNMERGEABLE_ITEMS", "SHOW_PR_LINES", "SCAN_CLOSED_AND_MERGED", "USE_V4_API", "REQUESTED_TEAM_REVIEWS",
             "SHOW_STATUSES_GREEN", "SHOW_STATUSES_GRAY", "SHOW_STATUSES_YELLOW", "SHOW_STATUSES_RED", "SHOW_BASE_AND_HEAD_BRANCHES", "PERSISTED_TAB_FILTERS", "PR_V4_SYNC_PAGE", "ISSUE_V4_SYNC_PAGE", "V4_THREAD_SYNC", "ASSIGNED_PR_TEAM_HANDLING_POLICY",
             "ASSIGNED_REVIEW_TEAM_HANDLING_POLICY", "AUTO_REMOVE_MERGED_ITEMS", "AUTO_REMOVE_CLOSED_ITEMS", "LABELS_INCLUSION_RULE", "AUTHORS_INCLUSION_RULE", "COMMENTER_INCLUSION_RULE", "SHOW_CLOSING_INFO"
-        ]
+        ] + NotificationType.allCases.map(notificationSoundKey)
     }
 
     @MainActor
@@ -943,6 +943,23 @@ enum Settings {
             }
         }
     }
+
+    //////////////////////// Notification sounds
+
+    /** The key that holds the sound for one kind of notification. The prefix persists, so it must not change. */
+    private static func notificationSoundKey(for type: NotificationType) -> String {
+        "NOTIFICATION_SOUND_" + type.rawValue
+    }
+
+    #if os(macOS)
+        static func notificationSound(for type: NotificationType) -> NotificationSound {
+            NotificationSound(storedValue: Settings[notificationSoundKey(for: type)] as? String)
+        }
+
+        static func setNotificationSound(_ sound: NotificationSound, for type: NotificationType) {
+            Settings[notificationSoundKey(for: type)] = sound.storedValue
+        }
+    #endif
 
     @propertyWrapper
     struct UserDefault<Value> {
