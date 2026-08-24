@@ -111,6 +111,8 @@ final class NotificationSoundsPane: NSObject {
               let sound = sender.selectedItem?.representedObject as? NotificationSound else { return }
 
         Settings.setNotificationSound(sound, for: type)
+        // The preview reads the system folder directly, so install now to log a failure while the user is here.
+        _ = sound.prepared()
         sound.play()
     }
 }

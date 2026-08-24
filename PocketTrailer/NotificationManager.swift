@@ -278,7 +278,7 @@ final class NotificationManager: NSObject {
         }
 
         #if os(macOS)
-            notification.sound = .default
+            notification.sound = Settings.notificationSound(for: type).prepared()
         #endif
 
         notification.userInfo = DataManager.info(for: item)

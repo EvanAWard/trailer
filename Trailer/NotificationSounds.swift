@@ -47,12 +47,20 @@ enum NotificationSound: Equatable {
         }
     }
 
-    /** The sound to attach to the notification content. `nil` gives a silent notification. */
-    var unNotificationSound: UNNotificationSound? {
+    /**
+     The sound to attach to the notification content, after the file is put where the notification centre
+     can find it. `nil` gives a silent notification.
+
+     A sound that cannot be installed falls back to the default, so that the user still hears something.
+     */
+    func prepared() -> UNNotificationSound? {
         switch self {
         case .systemDefault: .default
         case .silent: nil
-        case let .named(name): UNNotificationSound(named: UNNotificationSoundName(name))
+        case let .named(name):
+            NotificationSoundLibrary.install(name)
+                ? UNNotificationSound(named: UNNotificationSoundName(name))
+                : .default
         }
     }
 
