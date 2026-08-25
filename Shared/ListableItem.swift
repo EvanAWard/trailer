@@ -543,7 +543,7 @@ class ListableItem: DataItem, Listable {
         return true
     }
 
-    var shouldHideBecauseOfRepoHidingPolicy: Section.HidingCause? {
+    func shouldHideBecauseOfRepoHidingPolicy(settings _: Settings.Cache) -> Section.HidingCause? {
         nil
     }
 
@@ -643,7 +643,7 @@ class ListableItem: DataItem, Listable {
         var targetSection: Section
 
         if let cause = shouldHideBecauseOfDraftStatus(settings: settings)
-            ?? shouldHideBecauseOfRepoHidingPolicy
+            ?? shouldHideBecauseOfRepoHidingPolicy(settings: settings)
             ?? shouldHideDueToMyReview(settings: settings)
             ?? shouldHideBecauseOfInclusionRules(settings: settings) {
             targetSection = .hidden(cause: cause)
