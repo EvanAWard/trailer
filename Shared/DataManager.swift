@@ -45,6 +45,38 @@ enum DataManager {
             Settings.lastRunVersion = versionString
             migrated = true
         }
+
+        seedRepoHidingPolicies()
+    }
+
+    /**
+     Copies the hiding policy which each repository row holds into settings, once.
+
+     An entry which settings already hold wins, so that a run after a settings import cannot bring back
+     a policy which the imported file dropped.
+     */
+    private static func seedRepoHidingPolicies() {
+        if Settings.repoHidingPoliciesMigrated {
+            return
+        }
+
+        var policies = Settings.repoHidingPolicies
+        var seededNames = [String]()
+        for repo in Repo.allItems(in: main) where repo.itemHidingPolicy != RepoHidingPolicy.noHiding.rawValue {
+            guard let nodeId = repo.nodeId, policies[nodeId] == nil else {
+                continue
+            }
+            policies[nodeId] = repo.itemHidingPolicy
+            seededNames.append(repo.fullName.orEmpty)
+        }
+
+        Settings.repoHidingPolicies = policies
+        Settings.repoHidingPoliciesMigrated = true
+
+        let names = seededNames.joined(separator: ", ")
+        Task {
+            await Logging.shared.log("Seeded \(seededNames.count) repo hiding policies into settings: \(names)")
+        }
     }
 
     private static func processNotificationsForItems(of type: (some ListableItem).Type, newNotification: NotificationType, reopenedNotification: NotificationType, assignmentNotification: NotificationType, settings: Settings.Cache) async {
