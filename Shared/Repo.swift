@@ -31,6 +31,7 @@ final class Repo: DataItem {
     }
 
     static func sync(from nodes: Lista<Node>, on server: ApiServer, moc: NSManagedObjectContext, parentCache: FetchCache) {
+        let hidingPolicies = Settings.repoHidingPolicies
         syncItems(of: Repo.self, from: nodes, on: server, moc: moc, parentCache: parentCache) { repo, node in
             var neededByAuthoredPr = false
             var neededByAuthoredIssue = false
@@ -56,6 +57,7 @@ final class Repo: DataItem {
                 if node.created {
                     repo.displayPolicyForPrs = Settings.displayPolicyForNewPrs.rawValue
                     repo.displayPolicyForIssues = Settings.displayPolicyForNewIssues.rawValue
+                    repo.itemHidingPolicy = hidingPolicy(for: repo.nodeId, in: hidingPolicies).rawValue
                 }
             }
 
@@ -91,6 +93,7 @@ final class Repo: DataItem {
             }
         }
 
+        let hidingPolicies = Settings.repoHidingPolicies
         await v3items(with: filteredData, type: Repo.self, serverId: server.objectID, createNewItems: addNewRepos, moc: moc) { item, info, newOrUpdated, _ in
             if newOrUpdated {
                 item.fullName = info.potentialString(named: "full_name")
@@ -103,6 +106,7 @@ final class Repo: DataItem {
                 if item.postSyncAction == PostSyncAction.isNew.rawValue {
                     item.displayPolicyForPrs = Settings.displayPolicyForNewPrs.rawValue
                     item.displayPolicyForIssues = Settings.displayPolicyForNewIssues.rawValue
+                    item.itemHidingPolicy = hidingPolicy(for: item.nodeId, in: hidingPolicies).rawValue
                 }
             }
         }
