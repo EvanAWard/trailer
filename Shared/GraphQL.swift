@@ -489,6 +489,12 @@ enum GraphQL {
                             }
                         }
                     }
+
+                    if steps.contains(.filePaths) {
+                        Group("files", paging: profile.largePageSize) {
+                            Field("path")
+                        }
+                    }
                 }
 
                 if steps.contains(.reactions) {
@@ -559,7 +565,7 @@ enum GraphQL {
                 try await server.run(queries: queries)
                 await scanner.done()
             } catch {
-                await scanner.done()
+                await scanner.done(storingFilePaths: false)
                 server.lastSyncSucceeded = false
                 throw error
             }
@@ -964,6 +970,7 @@ enum GraphQL {
         private nonisolated(unsafe) let scannerServer: ApiServer
         private nonisolated(unsafe) let parentCache = FetchCache()
         private nonisolated(unsafe) var nodes = [String: Lista<Node>]()
+        private nonisolated(unsafe) let filePathCollector = FilePathCollector()
 
         init(server: ApiServer, parentType: (some DataItem).Type?) {
             let child = server.managedObjectContext!.buildChildContext()
@@ -992,7 +999,7 @@ enum GraphQL {
             }
         }
 
-        func done() async {
+        func done(storingFilePaths: Bool = true) async {
             await withCheckedContinuation { continuation in
                 scannerMoc.perform { [weak self] in
                     guard let self else {
@@ -1000,8 +1007,20 @@ enum GraphQL {
                         return
                     }
                     flush()
+                    if storingFilePaths {
+                        storePendingFilePaths()
+                    }
                     continuation.resume()
                 }
+            }
+        }
+
+        private func storePendingFilePaths() {
+            for (pr, paths) in filePathCollector.paths {
+                pr.changedFilePaths = PathFilter.encode(paths)
+            }
+            if scannerMoc.hasChanges {
+                try? scannerMoc.save()
             }
         }
 
@@ -1017,7 +1036,7 @@ enum GraphQL {
                 Issue.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache)
             }
             if let nodeList = nodes["PullRequest"] {
-                PullRequest.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache)
+                PullRequest.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache, filePaths: filePathCollector)
             }
             if let nodeList = nodes["Label"] {
                 PRLabel.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache)

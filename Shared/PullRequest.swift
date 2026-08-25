@@ -6,6 +6,23 @@ import TrailerQL
     import UIKit
 #endif
 
+/**
+ The changed file paths which one scan of one server has collected, keyed by pull request. The scan
+ replaces each stored list with what it holds here, and only when its pass ends with no error, so a
+ pass which fails leaves every stored list as it was.
+ */
+final class FilePathCollector {
+    private(set) var paths = [PullRequest: [String]]()
+
+    /**
+     Adds one page of paths. A pull request which changes no file still gets an entry, because an
+     entry means that the server answered for that pull request.
+     */
+    func add(_ paths: [String], for pr: PullRequest) {
+        self.paths[pr, default: []] += paths
+    }
+}
+
 final class PullRequest: ListableItem {
     @NSManaged var lastStatusNotified: String?
     @NSManaged var mergeCommitSha: String?
@@ -20,6 +37,7 @@ final class PullRequest: ListableItem {
     @NSManaged var headLabel: String?
     @NSManaged var baseLabel: String?
     @NSManaged var assignedReviewStatus: Int
+    @NSManaged var changedFilePaths: String?
 
     @NSManaged var statuses: Set<PRStatus>
     @NSManaged var reviews: Set<Review>
@@ -80,8 +98,15 @@ final class PullRequest: ListableItem {
         }
     }
 
-    static func sync(from nodes: Lista<Node>, on server: ApiServer, moc: NSManagedObjectContext, parentCache: FetchCache) {
+    static func sync(from nodes: Lista<Node>, on server: ApiServer, moc: NSManagedObjectContext, parentCache: FetchCache, filePaths: FilePathCollector? = nil) {
         syncItems(of: PullRequest.self, from: nodes, on: server, moc: moc, parentCache: parentCache) { pr, node in
+            // the file path step answers with no updatedAt, so its payload has to be read above the guard below
+            if let files = node.jsonPayload.potentialObject(named: "files") {
+                let paths = files.potentialArray(named: "edges")?
+                    .compactMap { $0.potentialObject(named: "node")?.potentialString(named: "path") } ?? []
+                filePaths?.add(paths, for: pr)
+            }
+
             guard node.created || node.updated,
                   let parentId = node.parent?.id ?? node.jsonPayload.potentialObject(named: "repository")?.potentialString(named: "id"),
                   let parent = Repo.asParent(with: parentId, in: moc, parentCache: parentCache)
@@ -207,6 +232,19 @@ final class PullRequest: ListableItem {
         }
 
         return nil
+    }
+
+    override func preferredSectionBasedOnChangedPaths(settings: Settings.Cache) -> Section? {
+        // no stored value means that no sync ever fetched the paths, and only the v4 sync fetches them
+        guard settings.useV4API,
+              let section = settings.pathFilterMovePolicy,
+              repo.syncFilePaths,
+              condition == ItemCondition.open.rawValue,
+              let stored = changedFilePaths,
+              PathFilter.matchesAny(changedPaths: PathFilter.decode(stored),
+                                    patterns: settings.pathFilterPatterns)
+        else { return nil }
+        return section
     }
 
     override var shouldHideBecauseOfRepoHidingPolicy: Section.HidingCause? {
@@ -417,6 +455,44 @@ final class PullRequest: ListableItem {
             }
         }
         return Array(prs)
+    }
+
+    /**
+     The open pull requests whose changed file paths the sync needs: the ones which hold none, and
+     the ones whose row changed in this pass. A row which is flagged for deletion stays out, because
+     the fetch clears that flag and the row would then survive the pass.
+
+     The stored value is not cleared here. The scan replaces it as a whole, once the answer for that
+     pull request is complete.
+     */
+    static func filePathCheckBatch(in moc: NSManagedObjectContext) -> [PullRequest] {
+        let f = NSFetchRequest<PullRequest>(entityName: "PullRequest")
+        f.returnsObjectsAsFaults = false
+        f.includesSubentities = false
+        f.predicate = NSCompoundPredicate(type: .and, subpredicates: [
+            ItemCondition.open.matchingPredicate,
+            ApiServer.lastSyncSucceededPredicate,
+            PostSyncAction.delete.excludingPredicate,
+            NSPredicate(format: "repo.syncFilePaths == YES"),
+            NSCompoundPredicate(type: .or, subpredicates: [
+                NSPredicate(format: "changedFilePaths == nil"),
+                PostSyncAction.isNew.matchingPredicate,
+                PostSyncAction.isUpdated.matchingPredicate
+            ])
+        ])
+        return try! moc.fetch(f)
+    }
+
+    /**
+     The pull requests which hold stored changed file paths, so that the sync can clear them when no
+     feature wants them.
+     */
+    static func itemsHoldingChangedPaths(in moc: NSManagedObjectContext) -> [PullRequest] {
+        let f = NSFetchRequest<PullRequest>(entityName: "PullRequest")
+        f.returnsObjectsAsFaults = false
+        f.includesSubentities = false
+        f.predicate = NSPredicate(format: "changedFilePaths != nil")
+        return try! moc.fetch(f)
     }
 
     func displayedStatusLines(settings: Settings.Cache) -> [PRStatus] {

@@ -460,6 +460,14 @@ class ListableItem: DataItem, Listable {
         nil
     }
 
+    /**
+     Reports which section the changed file paths of this item prefer. Only a pull request has changed
+     files, so the default is nil.
+     */
+    func preferredSectionBasedOnChangedPaths(settings _: Settings.Cache) -> Section? {
+        nil
+    }
+
     private func highestPreferredSection(takingItemConditionIntoAccount: Bool, settings: Settings.Cache) -> Section {
         if takingItemConditionIntoAccount {
             if condition == ItemCondition.merged.rawValue {
@@ -509,6 +517,11 @@ class ListableItem: DataItem, Listable {
         }
 
         if let potentialSection = preferredSectionBasedOnReviewAssignment,
+           potentialSection.sectionIndex < targetSection.sectionIndex {
+            targetSection = potentialSection
+        }
+
+        if let potentialSection = preferredSectionBasedOnChangedPaths(settings: settings),
            potentialSection.sectionIndex < targetSection.sectionIndex {
             targetSection = potentialSection
         }
@@ -575,11 +588,11 @@ class ListableItem: DataItem, Listable {
                 if labelFilterList.isDisjoint(with: mine) {
                     return .doesntContainLabel
                 }
-            case .excludeIfAll:
+            case .excludeIfEvery:
                 if labelFilterList.isSubset(of: mine) {
                     return .containsAllLabels
                 }
-            case .includeIfAll:
+            case .includeIfEvery:
                 if !labelFilterList.isSubset(of: mine) {
                     return .doesntContainAllLabels
                 }
@@ -590,11 +603,11 @@ class ListableItem: DataItem, Listable {
         if !authorFilterList.isEmpty,
            let login = userLogin?.comparableForm {
             switch settings.authorsIncludionRule {
-            case .excludeIfAll, .excludeIfAny:
+            case .excludeIfEvery, .excludeIfAny:
                 if authorFilterList.contains(login) {
                     return .containsAuthor
                 }
-            case .includeIfAll, .includeIfAny:
+            case .includeIfEvery, .includeIfAny:
                 if !authorFilterList.contains(login) {
                     return .doesntContainAuthor
                 }

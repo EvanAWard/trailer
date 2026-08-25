@@ -18,6 +18,7 @@ final class Repo: DataItem {
     @NSManaged var manuallyAdded: Bool
     @NSManaged var archived: Bool
     @NSManaged var lastScannedIssueEventId: Int
+    @NSManaged var syncFilePaths: Bool
 
     override static var typeName: String {
         "Repo"
@@ -233,6 +234,17 @@ final class Repo: DataItem {
         let allRepos = allItems(in: moc)
         let labels = allRepos.compactMap { $0.displayPolicyForPrs > 0 || $0.displayPolicyForIssues > 0 ? $0.groupLabel : nil }
         return Set<String>(labels).sorted()
+    }
+
+    /**
+     Whether any repository asks for the file paths of its pull requests.
+
+     This walks the loaded repositories rather than counting a fetch, so that a tick which the user has
+     just made, and which is not saved yet, counts.
+     */
+    @MainActor
+    static func anyReposSyncingFilePaths(in moc: NSManagedObjectContext) -> Bool {
+        allItems(in: moc).contains { $0.syncFilePaths }
     }
 
     private static let syncableRepoPredicate = NSPredicate(format: "((displayPolicyForPrs > 0 and displayPolicyForPrs < 4) or (displayPolicyForIssues > 0 and displayPolicyForIssues < 4)) and inaccessible != YES")
