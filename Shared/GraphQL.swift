@@ -953,14 +953,14 @@ enum GraphQL {
                     if let taskServer = moc.registeredObject(for: serverId) as? ApiServer {
                         taskServer.updateApiStats(newStats)
                         if let idMigrations = newStats.migratedIds {
-                            // the hiding policies are keyed on the node ID, so they move with it
+                            // the hiding policies are keyed on the node ID, so a policy is copied to the new ID when one moves
                             var policies = Settings.repoHidingPolicies
                             var policiesChanged = false
                             for (k, v) in idMigrations where k != v {
                                 // Logging.shared.log("Migrating \(typeName) ID \(k) to \(v)")
                                 if let item = type.item(id: k, in: moc) {
                                     item.nodeId = v
-                                    if typeIsRepo, let policy = policies.removeValue(forKey: k) {
+                                    if typeIsRepo, let policy = policies[k], policies[v] == nil {
                                         policies[v] = policy
                                         policiesChanged = true
                                     }
