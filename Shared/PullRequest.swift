@@ -247,21 +247,21 @@ final class PullRequest: ListableItem {
         return section
     }
 
-    override var shouldHideBecauseOfRepoHidingPolicy: Section.HidingCause? {
+    override func shouldHideBecauseOfRepoHidingPolicy(settings: Settings.Cache) -> Section.HidingCause? {
         if createdByMe {
-            switch repo.itemHidingPolicy {
-            case RepoHidingPolicy.hideAllMyAuthoredItems.rawValue:
+            switch repo.hidingPolicy(settings: settings) {
+            case .hideAllMyAuthoredItems:
                 .hidingAllMyAuthoredItems
-            case RepoHidingPolicy.hideMyAuthoredPrs.rawValue:
+            case .hideMyAuthoredPrs:
                 .hidingMyAuthoredPrs
             default:
                 nil
             }
         } else {
-            switch repo.itemHidingPolicy {
-            case RepoHidingPolicy.hideAllOthersItems.rawValue:
+            switch repo.hidingPolicy(settings: settings) {
+            case .hideAllOthersItems:
                 .hidingAllOthersItems
-            case RepoHidingPolicy.hideOthersPrs.rawValue:
+            case .hideOthersPrs:
                 .hidingOthersPrs
             default:
                 nil
