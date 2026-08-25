@@ -90,6 +90,7 @@ enum Settings {
         let newItemInOwnedRepoMovePolicy = Settings.newItemInOwnedRepoMovePolicy.preferredSection
         let pathFilterPatterns = PathFilter.patterns(from: Settings.pathFilterList)
         let pathFilterMovePolicy = Settings.pathFilterMovePolicy.preferredSection
+        let repoHidingPolicies = Settings.repoHidingPolicies
         let useV4API = Settings.useV4API
         let assignedItemDirectHandlingPolicy = Settings.assignedItemDirectHandlingPolicy
         let assignedItemTeamHandlingPolicy = Settings.assignedItemTeamHandlingPolicy
@@ -200,7 +201,8 @@ enum Settings {
             "DISPLAY_MILESTONES", "DEFAULT_APP_FOR_OPENING_WEB", "DEFAULT_APP_FOR_OPENING_ITEMS", "HIDE_ARCHIVED_REPOS", "DRAFT_HANDLING_POLICY", "MARK_UNMERGEABLE_ITEMS", "SHOW_PR_LINES", "SCAN_CLOSED_AND_MERGED", "USE_V4_API", "REQUESTED_TEAM_REVIEWS",
             "SHOW_STATUSES_GREEN", "SHOW_STATUSES_GRAY", "SHOW_STATUSES_YELLOW", "SHOW_STATUSES_RED", "SHOW_BASE_AND_HEAD_BRANCHES", "PERSISTED_TAB_FILTERS", "PR_V4_SYNC_PAGE", "ISSUE_V4_SYNC_PAGE", "V4_THREAD_SYNC", "ASSIGNED_PR_TEAM_HANDLING_POLICY",
             "ASSIGNED_REVIEW_TEAM_HANDLING_POLICY", "AUTO_REMOVE_MERGED_ITEMS", "AUTO_REMOVE_CLOSED_ITEMS", "LABELS_INCLUSION_RULE", "AUTHORS_INCLUSION_RULE", "COMMENTER_INCLUSION_RULE", "SHOW_CLOSING_INFO", "PATH_FILTER_LIST", "PATH_FILTER_MOVE_POLICY",
-            "NOTIFY_ON_CODE_COMMENTS", "NOTIFY_ON_ALL_CODE_COMMENTS", "NOTIFY_ON_COMMENT_REPLIES", "NOTIFY_ON_ALL_COMMENT_REPLIES", "NOTIFY_ON_REPLIES_ON_MY_ITEMS", "NOTIFY_ON_ITEM_COMMENTS", "NOTIFY_ON_ALL_ITEM_COMMENTS"
+            "NOTIFY_ON_CODE_COMMENTS", "NOTIFY_ON_ALL_CODE_COMMENTS", "NOTIFY_ON_COMMENT_REPLIES", "NOTIFY_ON_ALL_COMMENT_REPLIES", "NOTIFY_ON_REPLIES_ON_MY_ITEMS", "NOTIFY_ON_ITEM_COMMENTS", "NOTIFY_ON_ALL_ITEM_COMMENTS",
+            "REPO_HIDING_POLICIES", "REPO_HIDING_POLICIES_MIGRATED"
         ] + NotificationType.allCases.map(notificationSoundKey)
     }
 
@@ -550,6 +552,14 @@ enum Settings {
     static var pathFilterList: [String]
     static let pathFilterListHelp = "Move a pull request when it changes one of these paths. A pattern is relative to the root of each repository, so a broad pattern such as \"docs\" matches in every repository which has File Paths ticked. Use * and ? as wildcards, and a wildcard also crosses a directory separator, so \"*.md\" finds a Markdown file at any depth. A pattern with no wildcard matches whole path components, so \"docs\" reaches docs/a.md but never documentation/a.md."
 
+    /**
+     Hiding policies per repository, keyed by repository node ID, holding raw `RepoHidingPolicy`
+     values. Held here rather than on the repository row, so that the choice outlives a row which the
+     watchlist scan removes and a later sync recreates. A missing entry means no hiding.
+     */
+    @UserDefault(key: "REPO_HIDING_POLICIES", defaultValue: [:])
+    static var repoHidingPolicies: [String: Int]
+
     @UserDefault(key: "HOTKEY_LETTER", defaultValue: "T")
     static var hotkeyLetter: String
 
@@ -603,6 +613,10 @@ enum Settings {
 
     @EnumUserDefault(key: "V4_ID_MIGRATION_PHASE", defaultValue: .pending)
     static var V4IdMigrationPhase: MigrationStatus
+
+    /** Whether the hiding policies stored on the repository rows have been copied into settings. */
+    @UserDefault(key: "REPO_HIDING_POLICIES_MIGRATED", defaultValue: false)
+    static var repoHidingPoliciesMigrated: Bool
 
     @UserDefault(key: "HIDE_ARCHIVED_REPOS", defaultValue: false)
     static var hideArchivedRepos: Bool
