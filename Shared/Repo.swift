@@ -108,15 +108,21 @@ final class Repo: DataItem {
         }
     }
 
+    /**
+     Whether the watchlist scan may remove this repository.
+
+     Each Authored policy is a separate reason to keep the row, so a repository which still holds items
+     of either kind stays, even when the other kind has none left.
+     */
     var shouldBeWipedIfNotInWatchlist: Bool {
         if manuallyAdded {
             return false
         }
-        if displayPolicyForIssues == RepoDisplayPolicy.authoredOnly.rawValue {
-            return issues.isEmpty
+        if displayPolicyForIssues == RepoDisplayPolicy.authoredOnly.rawValue, !issues.isEmpty {
+            return false
         }
-        if displayPolicyForPrs == RepoDisplayPolicy.authoredOnly.rawValue {
-            return pullRequests.isEmpty
+        if displayPolicyForPrs == RepoDisplayPolicy.authoredOnly.rawValue, !pullRequests.isEmpty {
+            return false
         }
         return true
     }
