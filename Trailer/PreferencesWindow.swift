@@ -1285,9 +1285,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
         let index = sender.indexOfSelectedItem - 1
         if index < 0 { return }
 
-        for r in affectedReposFromSelection {
-            r.itemHidingPolicy = index
-        }
+        Repo.setHidingPolicy(RepoHidingPolicy(rawValue: index) ?? .noHiding, for: affectedReposFromSelection)
         reloadRepositories()
         sender.selectItem(at: 0)
         updateDisplayIssuesSetting()
@@ -1917,7 +1915,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
                         ])
                         menuCell.menu?.addItem(m)
                     }
-                    menuCell.selectItem(at: Int(r.itemHidingPolicy))
+                    menuCell.selectItem(at: r.currentHidingPolicy.rawValue)
                 } else {
                     let prs = tableColumn?.identifier.rawValue == "prs"
                     let currentPolicy = prs ? r.displayPolicyForPrs : r.displayPolicyForIssues
@@ -2029,7 +2027,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
                 } else if tableColumn?.identifier.rawValue == "issues" {
                     r.displayPolicyForIssues = index
                 } else if tableColumn?.identifier.rawValue == "hide" {
-                    r.itemHidingPolicy = index
+                    Repo.setHidingPolicy(RepoHidingPolicy(rawValue: index) ?? .noHiding, for: [r])
                 } else if tableColumn?.identifier.rawValue == "remove" {
                     remove(repo: r)
                 }
