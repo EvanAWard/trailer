@@ -127,6 +127,57 @@ final class Repo: DataItem {
         return true
     }
 
+    /** Reads one hiding policy out of a stored dictionary of them. An absent entry means no hiding. */
+    static func hidingPolicy(for nodeId: String?, in policies: [String: Int]) -> RepoHidingPolicy {
+        guard let nodeId, let raw = policies[nodeId] else {
+            return .noHiding
+        }
+        return RepoHidingPolicy(rawValue: raw) ?? .noHiding
+    }
+
+    /**
+     The hiding policy of this repository, from a settings snapshot.
+
+     The policy lives in settings rather than on this row, so that the choice outlives a row which the
+     watchlist scan removes and a later sync recreates.
+     */
+    func hidingPolicy(settings: Settings.Cache) -> RepoHidingPolicy {
+        Repo.hidingPolicy(for: nodeId, in: settings.repoHidingPolicies)
+    }
+
+    /**
+     The hiding policy of this repository, from settings directly.
+
+     A settings write rebuilds the snapshot in a task of its own, so a caller which must see a value it
+     has just written, such as the repositories table, reads it here instead.
+     */
+    var currentHidingPolicy: RepoHidingPolicy {
+        Repo.hidingPolicy(for: nodeId, in: Settings.repoHidingPolicies)
+    }
+
+    /**
+     Applies one hiding policy to several repositories, with a single settings write.
+
+     The value is also mirrored into `itemHidingPolicy`. That attribute no longer decides hiding, but
+     both repositories tables still sort on it, and the iOS one displays it.
+     */
+    @MainActor
+    static func setHidingPolicy(_ policy: RepoHidingPolicy, for repos: [Repo]) {
+        var policies = Settings.repoHidingPolicies
+        for repo in repos {
+            repo.itemHidingPolicy = policy.rawValue
+            guard let nodeId = repo.nodeId else {
+                continue
+            }
+            if policy == .noHiding {
+                policies.removeValue(forKey: nodeId)
+            } else {
+                policies[nodeId] = policy.rawValue
+            }
+        }
+        Settings.repoHidingPolicies = policies
+    }
+
     @discardableResult
     static func hideArchivedRepos(in moc: NSManagedObjectContext) -> Bool {
         var madeChanges = false
