@@ -217,6 +217,7 @@ enum Settings {
             "NOTIFY_ON_CODE_COMMENTS", "NOTIFY_ON_ALL_CODE_COMMENTS", "NOTIFY_ON_COMMENT_REPLIES", "NOTIFY_ON_ALL_COMMENT_REPLIES", "NOTIFY_ON_REPLIES_ON_MY_ITEMS", "NOTIFY_ON_ITEM_COMMENTS", "NOTIFY_ON_ALL_ITEM_COMMENTS",
             "REPO_HIDING_POLICIES", "REPO_HIDING_POLICIES_MIGRATED"
         ] + NotificationType.allCases.map(notificationSoundKey)
+            + NotificationType.allCases.map(notificationEnabledKey)
     }
 
     @MainActor
@@ -1035,6 +1036,11 @@ enum Settings {
         "NOTIFICATION_SOUND_" + type.rawValue
     }
 
+    /** The key that holds the on/off switch for one kind of notification. The prefix persists, so it must not change. */
+    private static func notificationEnabledKey(for type: NotificationType) -> String {
+        "NOTIFICATION_ENABLED_" + type.rawValue
+    }
+
     #if os(macOS)
         static func notificationSound(for type: NotificationType) -> NotificationSound {
             NotificationSound(storedValue: Settings[notificationSoundKey(for: type)] as? String)
@@ -1042,6 +1048,15 @@ enum Settings {
 
         static func setNotificationSound(_ sound: NotificationSound, for type: NotificationType) {
             Settings[notificationSoundKey(for: type)] = sound.storedValue
+        }
+
+        /** Whether Trailer posts this kind of notification. Nothing stored means on, so an upgrade keeps its behaviour. */
+        static func notificationEnabled(for type: NotificationType) -> Bool {
+            Settings[notificationEnabledKey(for: type)] as? Bool ?? true
+        }
+
+        static func setNotificationEnabled(_ enabled: Bool, for type: NotificationType) {
+            Settings[notificationEnabledKey(for: type)] = enabled
         }
     #endif
 
