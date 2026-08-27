@@ -84,6 +84,8 @@ enum Settings {
         let notifyOnItemReactions = Settings.notifyOnItemReactions
         let notifyOnCommentReactions = Settings.notifyOnCommentReactions
         let disableAllCommentNotifications = Settings.disableAllCommentNotifications
+        /** The kinds of notification which are switched on. Only macOS has controls for these. */
+        let enabledNotificationTypes = Set(NotificationType.allCases.filter(Settings.notificationEnabled(for:)))
         let notifyOnCodeComments = Settings.notifyOnCodeComments
         let notifyOnAllCodeComments = Settings.notifyOnAllCodeComments
         let notifyOnCommentReplies = Settings.notifyOnCommentReplies
@@ -192,6 +194,10 @@ enum Settings {
                 || (assignedTeamReviewHandlingPolicy.visible)
 
             requiresReviewApis = shouldSyncReviews || shouldSyncReviewAssignments
+        }
+
+        func notificationEnabled(for type: NotificationType) -> Bool {
+            enabledNotificationTypes.contains(type)
         }
     }
 
@@ -1049,16 +1055,16 @@ enum Settings {
         static func setNotificationSound(_ sound: NotificationSound, for type: NotificationType) {
             Settings[notificationSoundKey(for: type)] = sound.storedValue
         }
-
-        /** Whether Trailer posts this kind of notification. Nothing stored means on, so an upgrade keeps its behaviour. */
-        static func notificationEnabled(for type: NotificationType) -> Bool {
-            Settings[notificationEnabledKey(for: type)] as? Bool ?? true
-        }
-
-        static func setNotificationEnabled(_ enabled: Bool, for type: NotificationType) {
-            Settings[notificationEnabledKey(for: type)] = enabled
-        }
     #endif
+
+    /** Whether Trailer posts this kind of notification. Nothing stored means on, so an upgrade keeps its behaviour. */
+    static func notificationEnabled(for type: NotificationType) -> Bool {
+        Settings[notificationEnabledKey(for: type)] as? Bool ?? true
+    }
+
+    static func setNotificationEnabled(_ enabled: Bool, for type: NotificationType) {
+        Settings[notificationEnabledKey(for: type)] = enabled
+    }
 
     @propertyWrapper
     struct UserDefault<Value> {
