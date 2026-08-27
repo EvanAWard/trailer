@@ -106,6 +106,10 @@ final class NotificationManager: NSObject {
     }
 
     func postNotification(type: NotificationType, for item: DataItem) async {
+        #if os(macOS)
+            guard Settings.notificationEnabled(for: type) else { return }
+        #endif
+
         let notification = UNMutableNotificationContent()
 
         switch type {

@@ -84,6 +84,12 @@ enum Settings {
         let notifyOnItemReactions = Settings.notifyOnItemReactions
         let notifyOnCommentReactions = Settings.notifyOnCommentReactions
         let disableAllCommentNotifications = Settings.disableAllCommentNotifications
+        // Whether the mention notification is switched on. Only macOS has a control for it.
+        #if os(macOS)
+            let mentionNotificationsEnabled = Settings.notificationEnabled(for: .newMention)
+        #else
+            let mentionNotificationsEnabled = true
+        #endif
         let notifyOnCodeComments = Settings.notifyOnCodeComments
         let notifyOnAllCodeComments = Settings.notifyOnAllCodeComments
         let notifyOnCommentReplies = Settings.notifyOnCommentReplies

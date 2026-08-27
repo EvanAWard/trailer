@@ -107,8 +107,14 @@ final class PRComment: DataItem {
                 }
                 parent.wakeUp(settings: settings)
             }
-            NotificationQueue.add(type: .newMention, for: self)
-            return
+            if settings.mentionNotificationsEnabled {
+                NotificationQueue.add(type: .newMention, for: self)
+                return
+            }
+            // The mention notification is off, so let the comment settings decide instead of going silent
+            Task {
+                await Logging.shared.log("Mention notifications are off, handling the mention in item ID \(parentNodeId) as a comment")
+            }
         }
 
         if parent.isSnoozing, parent.shouldWakeOnComment {
