@@ -1,10 +1,12 @@
 import AppKit
 
 /**
- Fills the Notifications tab of the preferences window with one sound popup per kind of notification.
+ Fills the Notifications tab of the preferences window with one row per kind of notification, each
+ showing a sound popup and, for the kinds this tab controls, an on/off checkbox and a hint naming the
+ tab that controls it otherwise.
 
  The rows are built here rather than in `PreferencesWindow.xib`, which holds only an empty container
- view for this tab. The pane holds no state of its own beyond the popup that belongs to each type.
+ view for this tab.
  */
 @MainActor
 final class NotificationSoundsPane: NSObject {
@@ -60,7 +62,7 @@ final class NotificationSoundsPane: NSObject {
         reload()
     }
 
-    /** Shows the stored sound in each popup, after a settings import or a reset replaced them. */
+    /** Shows the stored sound and switch state in each row, after a settings import or a reset replaced them. */
     func reload() {
         // Every row offers the same choices, so the titles are made once rather than per menu item.
         let all: [NotificationSound] = [.systemDefault] + NotificationSound.systemSounds() + [.silent]
@@ -104,6 +106,7 @@ final class NotificationSoundsPane: NSObject {
         let checkbox: NSButton?
         if controlTabName == nil {
             let button = NSButton(checkboxWithTitle: "", target: self, action: #selector(enabledToggled))
+            button.setAccessibilityLabel(type.title)
             leading = button
             checkbox = button
         } else {
