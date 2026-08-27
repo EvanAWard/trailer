@@ -145,4 +145,19 @@ extension NotificationType {
         case .newRepoSubscribed, .newRepoAnnouncement: .repositories
         }
     }
+
+    /**
+     The preferences tab that holds the on/off control for this kind.
+
+     `nil` means the Notifications tab holds it, so the row shows a checkbox.
+     */
+    var controlTabName: String? {
+        switch self {
+        case .newComment: "Comments"
+        case .newReaction, .assignedForReview, .assignedToTeamForReview,
+             .changesApproved, .changesRequested, .changesDismissed: "Reviews"
+        case .newStatus: "Statuses"
+        default: nil
+        }
+    }
 }
