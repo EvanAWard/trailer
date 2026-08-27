@@ -100,18 +100,26 @@ final class PRComment: DataItem {
 
         let parentNodeId = parent.nodeId ?? "<no ID>"
 
-        if contains(terms: ["@\(apiServer.userName!)"]) {
+        let isMention = contains(terms: ["@\(apiServer.userName!)"])
+        if isMention {
             if parent.isSnoozing, parent.shouldWakeOnMention {
                 Task {
                     await Logging.shared.log("Waking up snoozed item ID \(parentNodeId) because of mention")
                 }
                 parent.wakeUp(settings: settings)
             }
-            NotificationQueue.add(type: .newMention, for: self)
-            return
+            if settings.notificationEnabled(for: .newMention) {
+                NotificationQueue.add(type: .newMention, for: self)
+                return
+            }
+            // The mention notification is off, so let the comment settings decide instead of going silent
+            Task {
+                await Logging.shared.log("Mention notifications are off, handling the mention in item ID \(parentNodeId) as a comment")
+            }
         }
 
-        if parent.isSnoozing, parent.shouldWakeOnComment {
+        // A mention obeys wake-on-mention only, so the notification fall-through must not reach this rule.
+        if !isMention, parent.isSnoozing, parent.shouldWakeOnComment {
             Task {
                 await Logging.shared.log("Waking up snoozed item ID \(parentNodeId) because of posted comment")
             }
