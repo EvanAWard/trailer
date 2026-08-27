@@ -8,6 +8,8 @@ enum NotificationQueue {
     private static var queue = Lista<(NotificationType, NSManagedObjectID)>()
 
     static func add(type: NotificationType, for item: DataItem) {
+        guard Settings.cache.notificationEnabled(for: type) else { return }
+
         try? item.managedObjectContext?.obtainPermanentIDs(for: [item])
         let oid = item.objectID
         Task { @MainActor in
