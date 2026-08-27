@@ -10,8 +10,9 @@ import AppKit
 final class NotificationSoundsPane: NSObject {
     private static let labelWidth: CGFloat = 200
     private static let popupWidth: CGFloat = 200
+    private static let checkboxWidth: CGFloat = 20
 
-    private var rows = [(type: NotificationType, popup: NSPopUpButton)]()
+    private var rows = [(type: NotificationType, popup: NSPopUpButton, checkbox: NSButton?)]()
 
     init(container: NSView) {
         super.init()
@@ -65,7 +66,9 @@ final class NotificationSoundsPane: NSObject {
         let all: [NotificationSound] = [.systemDefault] + NotificationSound.systemSounds() + [.silent]
         let sharedChoices = all.map { (title: $0.title, sound: $0) }
 
-        for (type, popup) in rows {
+        for (type, popup, checkbox) in rows {
+            checkbox?.state = Settings.notificationEnabled(for: type) ? .on : .off
+
             let current = Settings.notificationSound(for: type)
             var choices = sharedChoices
             if !choices.contains(where: { $0.sound == current }) {
@@ -91,13 +94,36 @@ final class NotificationSoundsPane: NSObject {
         let popup = NSPopUpButton(frame: .zero, pullsDown: false)
         popup.target = self
         popup.action = #selector(soundSelected)
-        rows.append((type, popup))
 
-        let row = NSStackView(views: [label, popup])
+        let controlTabName = type.controlTabName
+
+        // A kind that another tab controls keeps an empty view of the same width, so every label stays in one column.
+        let leading: NSView
+        let checkbox: NSButton?
+        if controlTabName == nil {
+            let button = NSButton(checkboxWithTitle: "", target: self, action: #selector(enabledToggled))
+            leading = button
+            checkbox = button
+        } else {
+            leading = NSView()
+            checkbox = nil
+        }
+
+        rows.append((type, popup, checkbox))
+
+        let row = NSStackView(views: [leading, label, popup])
         row.orientation = .horizontal
         row.spacing = 10
 
+        if let controlTabName {
+            let hint = NSTextField(labelWithString: "\(controlTabName) tab")
+            hint.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+            hint.textColor = .secondaryLabelColor
+            row.addArrangedSubview(hint)
+        }
+
         NSLayoutConstraint.activate([
+            leading.widthAnchor.constraint(equalToConstant: NotificationSoundsPane.checkboxWidth),
             label.widthAnchor.constraint(equalToConstant: NotificationSoundsPane.labelWidth),
             popup.widthAnchor.constraint(equalToConstant: NotificationSoundsPane.popupWidth)
         ])
@@ -114,6 +140,14 @@ final class NotificationSoundsPane: NSObject {
         // The preview reads the system folder directly, so install now to log a failure while the user is here.
         _ = sound.prepared()
         sound.play()
+    }
+
+    @objc
+    private func enabledToggled(_ sender: NSButton) {
+        guard let row = rows.first(where: { $0.checkbox === sender }) else { return }
+
+        let enabled = sender.state == .on
+        Settings.setNotificationEnabled(enabled, for: row.type)
     }
 }
 
