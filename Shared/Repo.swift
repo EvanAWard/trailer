@@ -31,6 +31,7 @@ final class Repo: DataItem {
     }
 
     static func sync(from nodes: Lista<Node>, on server: ApiServer, moc: NSManagedObjectContext, parentCache: FetchCache) {
+        let hidingPolicies = Settings.repoHidingPolicies
         syncItems(of: Repo.self, from: nodes, on: server, moc: moc, parentCache: parentCache) { repo, node in
             var neededByAuthoredPr = false
             var neededByAuthoredIssue = false
@@ -56,6 +57,7 @@ final class Repo: DataItem {
                 if node.created {
                     repo.displayPolicyForPrs = Settings.displayPolicyForNewPrs.rawValue
                     repo.displayPolicyForIssues = Settings.displayPolicyForNewIssues.rawValue
+                    repo.itemHidingPolicy = hidingPolicy(for: repo.nodeId, in: hidingPolicies).rawValue
                 }
             }
 
@@ -91,6 +93,7 @@ final class Repo: DataItem {
             }
         }
 
+        let hidingPolicies = Settings.repoHidingPolicies
         await v3items(with: filteredData, type: Repo.self, serverId: server.objectID, createNewItems: addNewRepos, moc: moc) { item, info, newOrUpdated, _ in
             if newOrUpdated {
                 item.fullName = info.potentialString(named: "full_name")
@@ -103,22 +106,97 @@ final class Repo: DataItem {
                 if item.postSyncAction == PostSyncAction.isNew.rawValue {
                     item.displayPolicyForPrs = Settings.displayPolicyForNewPrs.rawValue
                     item.displayPolicyForIssues = Settings.displayPolicyForNewIssues.rawValue
+                    item.itemHidingPolicy = hidingPolicy(for: item.nodeId, in: hidingPolicies).rawValue
                 }
             }
         }
     }
 
+    /**
+     Whether the watchlist scan may remove this repository.
+
+     Each Authored policy is a separate reason to keep the row, so a repository which still holds items
+     of either kind stays, even when the other kind has none left.
+     */
     var shouldBeWipedIfNotInWatchlist: Bool {
         if manuallyAdded {
             return false
         }
-        if displayPolicyForIssues == RepoDisplayPolicy.authoredOnly.rawValue {
-            return issues.isEmpty
+        if displayPolicyForIssues == RepoDisplayPolicy.authoredOnly.rawValue, !issues.isEmpty {
+            return false
         }
-        if displayPolicyForPrs == RepoDisplayPolicy.authoredOnly.rawValue {
-            return pullRequests.isEmpty
+        if displayPolicyForPrs == RepoDisplayPolicy.authoredOnly.rawValue, !pullRequests.isEmpty {
+            return false
         }
         return true
+    }
+
+    /** Reads one hiding policy out of a stored dictionary of them. An absent entry means no hiding. */
+    static func hidingPolicy(for nodeId: String?, in policies: [String: Int]) -> RepoHidingPolicy {
+        guard let nodeId, let raw = policies[nodeId] else {
+            return .noHiding
+        }
+        return RepoHidingPolicy(rawValue: raw) ?? .noHiding
+    }
+
+    /**
+     The hiding policy of this repository, from a settings snapshot.
+
+     The policy lives in settings rather than on this row, so that the choice outlives a row which the
+     watchlist scan removes and a later sync recreates.
+     */
+    func hidingPolicy(settings: Settings.Cache) -> RepoHidingPolicy {
+        Repo.hidingPolicy(for: nodeId, in: settings.repoHidingPolicies)
+    }
+
+    /**
+     The hiding policy of this repository, from settings directly.
+
+     A settings write rebuilds the snapshot in a task of its own, so a caller which must see a value it
+     has just written, such as the repositories table, reads it here instead.
+     */
+    var currentHidingPolicy: RepoHidingPolicy {
+        Repo.hidingPolicy(for: nodeId, in: Settings.repoHidingPolicies)
+    }
+
+    /**
+     Applies one hiding policy to several repositories, with a single settings write.
+
+     The value is also mirrored into `itemHidingPolicy`. That attribute no longer decides hiding, but
+     both repositories tables still sort on it, and the iOS one displays it.
+     */
+    @MainActor
+    static func setHidingPolicy(_ policy: RepoHidingPolicy, for repos: [Repo]) {
+        var policies = Settings.repoHidingPolicies
+        for repo in repos {
+            repo.itemHidingPolicy = policy.rawValue
+            guard let nodeId = repo.nodeId else {
+                continue
+            }
+            if policy == .noHiding {
+                policies.removeValue(forKey: nodeId)
+            } else {
+                policies[nodeId] = policy.rawValue
+            }
+        }
+        Settings.repoHidingPolicies = policies
+    }
+
+    /**
+     Copies the stored hiding policies onto the repository rows.
+
+     `itemHidingPolicy` no longer decides hiding, but the macOS repositories table sorts on it, so the
+     column sorts on the value it displays only while the two agree.
+     */
+    @MainActor
+    static func applyStoredHidingPolicies(in moc: NSManagedObjectContext) {
+        let policies = Settings.repoHidingPolicies
+        for repo in Repo.allItems(in: moc) {
+            let policy = hidingPolicy(for: repo.nodeId, in: policies).rawValue
+            if repo.itemHidingPolicy != policy {
+                repo.itemHidingPolicy = policy
+            }
+        }
     }
 
     @discardableResult
