@@ -1,9 +1,9 @@
 import AppKit
 
 /**
- Fills the Notifications tab of the preferences window with one row per kind of notification, each
- showing a sound popup and, for the kinds this tab controls, an on/off checkbox and a hint naming the
- tab that controls it otherwise.
+ Fills the Notifications tab of the preferences window with a header naming the columns and one row
+ per kind of notification. Each row shows a sound popup, then an on/off checkbox for the kinds this
+ tab controls, or the name of the tab that controls the kind instead.
 
  The rows are built here rather than in `PreferencesWindow.xib`, which holds only an empty container
  view for this tab.
@@ -12,7 +12,8 @@ import AppKit
 final class NotificationSoundsPane: NSObject {
     private static let labelWidth: CGFloat = 200
     private static let popupWidth: CGFloat = 200
-    private static let checkboxWidth: CGFloat = 20
+    /** The left and right inset of the rows. The header uses it too, so the columns line up. */
+    private static let horizontalInset: CGFloat = 20
 
     private var rows = [(type: NotificationType, popup: NSPopUpButton, checkbox: NSButton?)]()
 
@@ -23,7 +24,10 @@ final class NotificationSoundsPane: NSObject {
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 6
-        stack.edgeInsets = NSEdgeInsets(top: 14, left: 20, bottom: 14, right: 20)
+        stack.edgeInsets = NSEdgeInsets(top: 6,
+                                        left: NotificationSoundsPane.horizontalInset,
+                                        bottom: 14,
+                                        right: NotificationSoundsPane.horizontalInset)
         stack.translatesAutoresizingMaskIntoConstraints = false
 
         let typesByGroup = Dictionary(grouping: NotificationType.allCases, by: \.group)
@@ -47,12 +51,29 @@ final class NotificationSoundsPane: NSObject {
         let clip = FlippedClipView()
         scroll.contentView = clip
         scroll.documentView = stack
+
+        // The header sits outside the scroll view, so it stays in view while the rows scroll under it.
+        let header = headerRow()
+        container.addSubview(header)
+
+        let separator = NSBox()
+        separator.boxType = .separator
+        separator.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(separator)
+
         container.addSubview(scroll)
 
         NSLayoutConstraint.activate([
+            header.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: NotificationSoundsPane.horizontalInset),
+            header.topAnchor.constraint(equalTo: container.topAnchor, constant: 14),
+            separator.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            separator.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            // A zero-frame `NSBox` has no intrinsic height and picks its axis from its bounds, so state both.
+            separator.heightAnchor.constraint(equalToConstant: 1),
+            separator.topAnchor.constraint(equalTo: header.bottomAnchor, constant: 6),
             scroll.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             scroll.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            scroll.topAnchor.constraint(equalTo: container.topAnchor),
+            scroll.topAnchor.constraint(equalTo: separator.bottomAnchor),
             scroll.bottomAnchor.constraint(equalTo: container.bottomAnchor),
             stack.leadingAnchor.constraint(equalTo: clip.leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: clip.trailingAnchor),
@@ -89,6 +110,39 @@ final class NotificationSoundsPane: NSObject {
         }
     }
 
+    /** A dimmed small label, used for the column names and for the hint that replaces a checkbox. */
+    private static func secondaryLabel(_ text: String) -> NSTextField {
+        let label = NSTextField(labelWithString: text)
+        label.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+        label.textColor = .secondaryLabelColor
+        return label
+    }
+
+    /** Lays out the three columns of the header and of every row, so the columns cannot drift. */
+    private static func columnStack(_ views: [NSView]) -> NSStackView {
+        let stack = NSStackView(views: views)
+        stack.orientation = .horizontal
+        stack.spacing = 10
+
+        NSLayoutConstraint.activate([
+            views[0].widthAnchor.constraint(equalToConstant: labelWidth),
+            views[1].widthAnchor.constraint(equalToConstant: popupWidth)
+        ])
+
+        return stack
+    }
+
+    /** Names the popup and checkbox columns. */
+    private func headerRow() -> NSView {
+        let header = NotificationSoundsPane.columnStack([
+            NSView(),
+            NotificationSoundsPane.secondaryLabel("Sound"),
+            NotificationSoundsPane.secondaryLabel("Notify")
+        ])
+        header.translatesAutoresizingMaskIntoConstraints = false
+        return header
+    }
+
     private func row(for type: NotificationType) -> NSView {
         let label = NSTextField(labelWithString: type.title)
         label.alignment = .right
@@ -97,41 +151,22 @@ final class NotificationSoundsPane: NSObject {
         popup.target = self
         popup.action = #selector(soundSelected)
 
-        let controlTabName = type.controlTabName
-
-        // A kind that another tab controls keeps an empty view of the same width, so every label stays in one column.
-        let leading: NSView
+        // A kind that another tab controls names that tab in place of the checkbox.
+        let trailing: NSView
         let checkbox: NSButton?
-        if controlTabName == nil {
+        if let controlTabName = type.controlTabName {
+            trailing = NotificationSoundsPane.secondaryLabel("\(controlTabName) tab")
+            checkbox = nil
+        } else {
             let button = NSButton(checkboxWithTitle: "", target: self, action: #selector(enabledToggled))
             button.setAccessibilityLabel(type.title)
-            leading = button
+            trailing = button
             checkbox = button
-        } else {
-            leading = NSView()
-            checkbox = nil
         }
 
         rows.append((type, popup, checkbox))
 
-        let row = NSStackView(views: [leading, label, popup])
-        row.orientation = .horizontal
-        row.spacing = 10
-
-        if let controlTabName {
-            let hint = NSTextField(labelWithString: "\(controlTabName) tab")
-            hint.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
-            hint.textColor = .secondaryLabelColor
-            row.addArrangedSubview(hint)
-        }
-
-        NSLayoutConstraint.activate([
-            leading.widthAnchor.constraint(equalToConstant: NotificationSoundsPane.checkboxWidth),
-            label.widthAnchor.constraint(equalToConstant: NotificationSoundsPane.labelWidth),
-            popup.widthAnchor.constraint(equalToConstant: NotificationSoundsPane.popupWidth)
-        ])
-
-        return row
+        return NotificationSoundsPane.columnStack([label, popup, trailing])
     }
 
     @objc
