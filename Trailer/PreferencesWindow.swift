@@ -119,6 +119,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     @IBOutlet private var notifyOnAllCodeComments: NSButton!
     @IBOutlet private var notifyOnCommentReplies: NSButton!
     @IBOutlet private var notifyOnAllCommentReplies: NSButton!
+    @IBOutlet private var notifyOnRepliesOnMyItems: NSButton!
     @IBOutlet private var notifyOnItemComments: NSButton!
     @IBOutlet private var notifyOnAllItemComments: NSButton!
     @IBOutlet private var commentNotificationNote: NSTextField!
@@ -517,10 +518,10 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     }
 
     /**
-     The dim state of the three "…or All" boxes and of the reply pair, and the note which says why the
-     reply pair cannot act. A control which cannot act should not accept input, and an "…or All" box
-     whose base box is off must not keep a stored `true`. A pair disabled only because the v4 API is off
-     keeps its stored values, so the user's choice survives a switch to v3 and back.
+     The dim state of the three "…or All" boxes and of the two reply boxes, and the note which says why
+     the reply boxes cannot act. A control which cannot act should not accept input, and an "…or All" box
+     whose base box is off must not keep a stored `true`. A box disabled only because the v4 API is off
+     keeps its stored value, so the user's choice survives a switch to v3 and back.
      */
     private func updateCommentNotificationNote() {
         if !Settings.notifyOnCodeComments {
@@ -541,13 +542,15 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
         notifyOnAllCodeComments.integerValue = Settings.notifyOnAllCodeComments.asInt
         notifyOnAllCommentReplies.integerValue = Settings.notifyOnAllCommentReplies.asInt
         notifyOnAllItemComments.integerValue = Settings.notifyOnAllItemComments.asInt
+        notifyOnRepliesOnMyItems.integerValue = Settings.notifyOnRepliesOnMyItems.asInt
 
         notifyOnCommentReplies.isEnabled = v4
+        notifyOnRepliesOnMyItems.isEnabled = v4
         notifyOnAllCodeComments.isEnabled = Settings.notifyOnCodeComments
         notifyOnAllCommentReplies.isEnabled = v4 && Settings.notifyOnCommentReplies
         notifyOnAllItemComments.isEnabled = Settings.notifyOnItemComments
 
-        let text = v4 ? "" : "Matching replies to your threads needs the v4 API."
+        let text = v4 ? "" : "Reply notifications need the v4 API."
         commentNotificationNote.stringValue = text
         commentNotificationNote.textColor = .disabledControlTextColor
         commentNotificationNote.toolTip = v4 ? nil : text
@@ -649,6 +652,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
         notifyOnAllCodeComments.toolTip = Settings.notifyOnAllCodeCommentsHelp
         notifyOnCommentReplies.toolTip = Settings.notifyOnCommentRepliesHelp
         notifyOnAllCommentReplies.toolTip = Settings.notifyOnAllCommentRepliesHelp
+        notifyOnRepliesOnMyItems.toolTip = Settings.notifyOnRepliesOnMyItemsHelp
         notifyOnItemComments.toolTip = Settings.notifyOnItemCommentsHelp
         notifyOnAllItemComments.toolTip = Settings.notifyOnAllItemCommentsHelp
         showStatusItems.toolTip = Settings.showStatusItemsHelp
@@ -1177,6 +1181,11 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
 
     @IBAction private func notifyOnAllCommentRepliesSelected(_ sender: NSButton) {
         Settings.notifyOnAllCommentReplies = (sender.integerValue == 1)
+        updateCommentNotificationNote()
+    }
+
+    @IBAction private func notifyOnRepliesOnMyItemsSelected(_ sender: NSButton) {
+        Settings.notifyOnRepliesOnMyItems = (sender.integerValue == 1)
         updateCommentNotificationNote()
     }
 
