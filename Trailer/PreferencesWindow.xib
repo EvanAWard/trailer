@@ -1671,7 +1671,7 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
                                                                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Cmt-n0-003">
-                                                                    <rect key="frame" x="18" y="103" width="335" height="18"/>
+                                                                    <rect key="frame" x="18" y="112" width="335" height="18"/>
                                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                     <buttonCell key="cell" type="check" title="Someone comments on the code of a PR I created…" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="Cmt-n0-004">
                                                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1682,7 +1682,7 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                                                                     </connections>
                                                                 </button>
                                                                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Cmt-n0-006">
-                                                                    <rect key="frame" x="18" y="73" width="335" height="18"/>
+                                                                    <rect key="frame" x="18" y="84" width="335" height="18"/>
                                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                     <buttonCell key="cell" type="check" title="Someone replies to a thread I commented in…" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="Cmt-n0-007">
                                                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1692,8 +1692,19 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                                                                         <action selector="notifyOnCommentRepliesSelected:" target="vQH-WF-vh2" id="Cmt-n0-008"/>
                                                                     </connections>
                                                                 </button>
+                                                                <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Cmt-n0-023">
+                                                                    <rect key="frame" x="18" y="56" width="335" height="18"/>
+                                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                    <buttonCell key="cell" type="check" title="Someone replies to a thread on a PR I created" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="Cmt-n0-024">
+                                                                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                        <font key="font" metaFont="system"/>
+                                                                    </buttonCell>
+                                                                    <connections>
+                                                                        <action selector="notifyOnRepliesOnMyItemsSelected:" target="vQH-WF-vh2" id="Cmt-n0-025"/>
+                                                                    </connections>
+                                                                </button>
                                                                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Cmt-n0-009">
-                                                                    <rect key="frame" x="18" y="43" width="335" height="18"/>
+                                                                    <rect key="frame" x="18" y="28" width="335" height="18"/>
                                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                     <buttonCell key="cell" type="check" title="Someone comments on an item I created…" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="Cmt-n0-010">
                                                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1704,7 +1715,7 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                                                                     </connections>
                                                                 </button>
                                                                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Cmt-n0-012">
-                                                                    <rect key="frame" x="352" y="103" width="84" height="18"/>
+                                                                    <rect key="frame" x="352" y="112" width="84" height="18"/>
                                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                     <buttonCell key="cell" type="check" title="…or All" bezelStyle="regularSquare" imagePosition="right" alignment="right" state="on" inset="2" id="Cmt-n0-013">
                                                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1715,7 +1726,7 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                                                                     </connections>
                                                                 </button>
                                                                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Cmt-n0-015">
-                                                                    <rect key="frame" x="352" y="73" width="84" height="18"/>
+                                                                    <rect key="frame" x="352" y="84" width="84" height="18"/>
                                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                     <buttonCell key="cell" type="check" title="…or All" bezelStyle="regularSquare" imagePosition="right" alignment="right" state="on" inset="2" id="Cmt-n0-016">
                                                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1726,7 +1737,7 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                                                                     </connections>
                                                                 </button>
                                                                 <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Cmt-n0-018">
-                                                                    <rect key="frame" x="352" y="43" width="84" height="18"/>
+                                                                    <rect key="frame" x="352" y="28" width="84" height="18"/>
                                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                     <buttonCell key="cell" type="check" title="…or All" bezelStyle="regularSquare" imagePosition="right" alignment="right" state="on" inset="2" id="Cmt-n0-019">
                                                                         <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
@@ -1737,9 +1748,9 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                                                                     </connections>
                                                                 </button>
                                                                 <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" setsMaxLayoutWidthAtFirstLayout="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Cmt-n0-021">
-                                                                    <rect key="frame" x="20" y="15" width="411" height="14"/>
+                                                                    <rect key="frame" x="20" y="11" width="411" height="14"/>
                                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="center" title="Matching replies to your threads needs the v4 API." id="Cmt-n0-022">
+                                                                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="center" title="Reply notifications need the v4 API." id="Cmt-n0-022">
                                                                         <font key="font" size="9" name="HelveticaNeue"/>
                                                                         <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                                                                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
@@ -3124,6 +3135,7 @@ in System Preferences -&gt; Security -&gt; Privacy.  Restart Trailer for the per
                 <outlet property="notifyOnCommentReplies" destination="Cmt-n0-006" id="Cmt-n0-035"/>
                 <outlet property="notifyOnItemComments" destination="Cmt-n0-009" id="Cmt-n0-036"/>
                 <outlet property="notifyOnItemReactions" destination="ccb-WQ-p0n" id="J2b-31-J9w"/>
+                <outlet property="notifyOnRepliesOnMyItems" destination="Cmt-n0-023" id="Cmt-n0-037"/>
                 <outlet property="notifyOnReviewAssignments" destination="z39-OC-9iv" id="D8e-oi-A4Y"/>
                 <outlet property="notifyOnReviewDismissals" destination="8kt-mf-c4i" id="co3-xA-Iiq"/>
                 <outlet property="notifyOnStatusUpdates" destination="lAL-hp-XJt" id="Amv-PJ-TtL"/>
