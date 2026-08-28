@@ -422,7 +422,7 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, N
             return false
         }
         Repo.applyStoredHidingPolicies(in: DataManager.main)
-        await DataManager.postProcessAllItems(in: DataManager.main, settings: Settings.cache)
+        await DataManager.postProcessAllItems(in: DataManager.main, settings: Settings.refreshCache())
         await DataManager.saveDB()
         preferencesWindow?.reloadSettings()
         setupWindows()

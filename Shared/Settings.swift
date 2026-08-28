@@ -56,6 +56,19 @@ enum InclusionSetting: Int {
 enum Settings {
     static var cache = Cache()
 
+    /**
+     Rebuilds the shared snapshot at once and returns it.
+
+     A write rebuilds the snapshot in a task of its own, so a caller which must not wait for that task,
+     such as a pass which re-processes all items, refreshes it here instead.
+     */
+    @discardableResult
+    static func refreshCache() -> Cache {
+        let newCache = Cache()
+        cache = newCache
+        return newCache
+    }
+
     final class Cache {
         let labelFilterList = Set(Settings.labelBlacklist.map(\.comparableForm))
         let labelsIncludionRule = Settings.labelsIncludionRule
