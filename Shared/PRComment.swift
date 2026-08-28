@@ -172,7 +172,7 @@ final class PRComment: DataItem {
         }
         let f = NSFetchRequest<PRComment>(entityName: "PRComment")
         f.fetchLimit = 1
-        f.predicate = NSPredicate(format: "userNodeId == %@ and (nodeId == %@ or replyToNodeId == %@)", me, replyToNodeId, replyToNodeId)
+        f.predicate = NSPredicate(format: "userNodeId == %@ and apiServer == %@ and (nodeId == %@ or replyToNodeId == %@)", me, apiServer, replyToNodeId, replyToNodeId)
         return ((try? moc.count(for: f)) ?? 0) > 0
     }
 
