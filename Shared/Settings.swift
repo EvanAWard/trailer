@@ -75,6 +75,7 @@ enum Settings {
         let notifyOnAllCodeComments = Settings.notifyOnAllCodeComments
         let notifyOnCommentReplies = Settings.notifyOnCommentReplies
         let notifyOnAllCommentReplies = Settings.notifyOnAllCommentReplies
+        let notifyOnRepliesOnMyItems = Settings.notifyOnRepliesOnMyItems
         let notifyOnItemComments = Settings.notifyOnItemComments
         let notifyOnAllItemComments = Settings.notifyOnAllItemComments
         let notifyOnStatusUpdates = Settings.notifyOnStatusUpdates
@@ -199,7 +200,7 @@ enum Settings {
             "DISPLAY_MILESTONES", "DEFAULT_APP_FOR_OPENING_WEB", "DEFAULT_APP_FOR_OPENING_ITEMS", "HIDE_ARCHIVED_REPOS", "DRAFT_HANDLING_POLICY", "MARK_UNMERGEABLE_ITEMS", "SHOW_PR_LINES", "SCAN_CLOSED_AND_MERGED", "USE_V4_API", "REQUESTED_TEAM_REVIEWS",
             "SHOW_STATUSES_GREEN", "SHOW_STATUSES_GRAY", "SHOW_STATUSES_YELLOW", "SHOW_STATUSES_RED", "SHOW_BASE_AND_HEAD_BRANCHES", "PERSISTED_TAB_FILTERS", "PR_V4_SYNC_PAGE", "ISSUE_V4_SYNC_PAGE", "V4_THREAD_SYNC", "ASSIGNED_PR_TEAM_HANDLING_POLICY",
             "ASSIGNED_REVIEW_TEAM_HANDLING_POLICY", "AUTO_REMOVE_MERGED_ITEMS", "AUTO_REMOVE_CLOSED_ITEMS", "LABELS_INCLUSION_RULE", "AUTHORS_INCLUSION_RULE", "COMMENTER_INCLUSION_RULE", "SHOW_CLOSING_INFO", "PATH_FILTER_LIST", "PATH_FILTER_MOVE_POLICY",
-            "NOTIFY_ON_CODE_COMMENTS", "NOTIFY_ON_ALL_CODE_COMMENTS", "NOTIFY_ON_COMMENT_REPLIES", "NOTIFY_ON_ALL_COMMENT_REPLIES", "NOTIFY_ON_ITEM_COMMENTS", "NOTIFY_ON_ALL_ITEM_COMMENTS"
+            "NOTIFY_ON_CODE_COMMENTS", "NOTIFY_ON_ALL_CODE_COMMENTS", "NOTIFY_ON_COMMENT_REPLIES", "NOTIFY_ON_ALL_COMMENT_REPLIES", "NOTIFY_ON_REPLIES_ON_MY_ITEMS", "NOTIFY_ON_ITEM_COMMENTS", "NOTIFY_ON_ALL_ITEM_COMMENTS"
         ] + NotificationType.allCases.map(notificationSoundKey)
     }
 
@@ -681,7 +682,7 @@ enum Settings {
     static var disableAllCommentNotifications: Bool
     static let disableAllCommentNotificationsHelp = "Do not get notified about any comments at all."
 
-    // The six settings below default to true, where the review notification settings default to false.
+    // The seven settings below default to true, where the review notification settings default to false.
     // Reviews notified nothing until the user opted in, and comments notified everything, so in both
     // cases the default is the behaviour the setting replaced.
 
@@ -700,6 +701,10 @@ enum Settings {
     @UserDefault(key: "NOTIFY_ON_ALL_COMMENT_REPLIES", defaultValue: true)
     static var notifyOnAllCommentReplies: Bool
     static let notifyOnAllCommentRepliesHelp = "Do this for all threads, not just those I have commented in."
+
+    @UserDefault(key: "NOTIFY_ON_REPLIES_ON_MY_ITEMS", defaultValue: true)
+    static var notifyOnRepliesOnMyItems: Bool
+    static let notifyOnRepliesOnMyItemsHelp = "Issue a notification when someone replies in any review thread on a PR I created, including a thread I have not commented in."
 
     @UserDefault(key: "NOTIFY_ON_ITEM_COMMENTS", defaultValue: true)
     static var notifyOnItemComments: Bool

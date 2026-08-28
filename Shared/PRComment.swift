@@ -139,7 +139,7 @@ final class PRComment: DataItem {
         replyToNodeId != nil
     }
 
-    /** The pair of settings which decides this comment, named for the log. Read in the same order as `shouldNotify`. */
+    /** The group of settings which decides this comment, named for the log. Read in the same order as `shouldNotify`. */
     private var notificationKind: String {
         if isReply {
             return "reply"
@@ -153,7 +153,9 @@ final class PRComment: DataItem {
     /** True when the comment notification settings ask for a comment of this kind, given who owns the item or who is in the thread. */
     private func shouldNotify(settings: Settings.Cache) -> Bool {
         if isReply {
-            return settings.notifyOnAllCommentReplies || (settings.notifyOnCommentReplies && threadHoldsMyComment())
+            return settings.notifyOnAllCommentReplies
+                || (settings.notifyOnRepliesOnMyItems && parent?.createdByMe == true)
+                || (settings.notifyOnCommentReplies && threadHoldsMyComment())
         }
         if isCodeComment {
             return settings.notifyOnAllCodeComments || (settings.notifyOnCodeComments && parent?.createdByMe == true)
