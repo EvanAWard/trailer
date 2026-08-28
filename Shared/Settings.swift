@@ -420,6 +420,8 @@ enum Settings {
                     Settings[k] = v
                 }
             }
+            // the file decides the hiding policies, so a later start must not seed them from the repository rows
+            Settings.repoHidingPoliciesMigrated = true
             let result1 = await ApiServer.configure(from: settings["DB_CONFIG_OBJECTS"] as! [String: [String: NSObject]])
             let result2 = await SnoozePreset.configure(from: settings["DB_SNOOZE_OBJECTS"] as! [[String: NSObject]])
             return result1 && result2

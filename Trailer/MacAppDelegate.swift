@@ -421,6 +421,7 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, N
             _ = alert.runModal()
             return false
         }
+        Repo.applyStoredHidingPolicies(in: DataManager.main)
         await DataManager.postProcessAllItems(in: DataManager.main, settings: Settings.cache)
         await DataManager.saveDB()
         preferencesWindow?.reloadSettings()
