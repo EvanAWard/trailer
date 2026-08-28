@@ -1476,10 +1476,10 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <box autoresizesSubviews="NO" fixedFrame="YES" borderType="none" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="9l1-g0-3Pv">
-                                            <rect key="frame" x="123" y="46" width="673" height="330"/>
+                                            <rect key="frame" x="14" y="46" width="870" height="330"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxX="YES" flexibleMinY="YES" flexibleMaxY="YES"/>
                                             <view key="contentView" id="j25-JP-OCJ">
-                                                <rect key="frame" x="0.0" y="0.0" width="673" height="330"/>
+                                                <rect key="frame" x="0.0" y="0.0" width="870" height="330"/>
                                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                 <subviews>
                                                     <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="gjf-cd-s24">
@@ -1527,7 +1527,7 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                                                         </connections>
                                                     </button>
                                                     <box fixedFrame="YES" borderType="none" title="If I am mentioned, move an item to…" translatesAutoresizingMaskIntoConstraints="NO" id="7lb-Oe-dqF">
-                                                        <rect key="frame" x="443" y="268" width="230" height="51"/>
+                                                        <rect key="frame" x="594" y="112" width="230" height="51"/>
                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                         <view key="contentView" id="CDr-sW-N4t">
                                                             <rect key="frame" x="0.0" y="0.0" width="230" height="39"/>
@@ -1556,7 +1556,7 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                                                         </view>
                                                     </box>
                                                     <box fixedFrame="YES" borderType="none" title="If my team is mentioned, move to…" translatesAutoresizingMaskIntoConstraints="NO" id="vq6-6w-ave">
-                                                        <rect key="frame" x="443" y="223" width="230" height="51"/>
+                                                        <rect key="frame" x="594" y="67" width="230" height="51"/>
                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                         <view key="contentView" id="5aL-sj-f6p">
                                                             <rect key="frame" x="0.0" y="0.0" width="230" height="39"/>
@@ -1585,7 +1585,7 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                                                         </view>
                                                     </box>
                                                     <box fixedFrame="YES" borderType="none" title="New items in owned repos, move to…" translatesAutoresizingMaskIntoConstraints="NO" id="WXP-sZ-GiR">
-                                                        <rect key="frame" x="443" y="178" width="230" height="51"/>
+                                                        <rect key="frame" x="594" y="22" width="230" height="51"/>
                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                         <view key="contentView" id="8jk-qP-cR3">
                                                             <rect key="frame" x="0.0" y="0.0" width="230" height="39"/>
@@ -1625,14 +1625,14 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                                                         </connections>
                                                     </button>
                                                     <box fixedFrame="YES" borderType="line" titlePosition="noTitle" translatesAutoresizingMaskIntoConstraints="NO" id="BtZ-XP-Seo">
-                                                        <rect key="frame" x="8" y="53" width="655" height="113"/>
+                                                        <rect key="frame" x="8" y="53" width="576" height="113"/>
                                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                         <view key="contentView" id="3Av-Xm-Bwe">
-                                                            <rect key="frame" x="4" y="5" width="647" height="105"/>
+                                                            <rect key="frame" x="4" y="5" width="568" height="105"/>
                                                             <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                             <subviews>
                                                                 <tokenField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="DTL-cq-VaA">
-                                                                    <rect key="frame" x="20" y="20" width="607" height="36"/>
+                                                                    <rect key="frame" x="20" y="20" width="528" height="36"/>
                                                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                                                     <tokenFieldCell key="cell" selectable="YES" editable="YES" borderStyle="bezel" alignment="left" placeholderString="Comma separated list of usernames (case/accent insensitive, without the '@' prefix)" drawsBackground="YES" allowsEditingTextAttributes="YES" tokenStyle="rounded" id="i7v-35-449">
                                                                         <font key="font" metaFont="cellTitle"/>
@@ -1644,7 +1644,7 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                                                                     </connections>
                                                                 </tokenField>
                                                                 <popUpButton verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kUC-2w-J0s">
-                                                                    <rect key="frame" x="17" y="60" width="614" height="26"/>
+                                                                    <rect key="frame" x="17" y="60" width="535" height="26"/>
                                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                                                     <popUpButtonCell key="cell" type="push" title="Ignore comments and reactions created by these users " bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="M7D-xU-OU1" id="Oon-8f-R9O">
                                                                         <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
@@ -1660,6 +1660,102 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                                                                         <action selector="commentAuthorBlacklistModeSelected:" target="vQH-WF-vh2" id="y1F-2o-kvJ"/>
                                                                     </connections>
                                                                 </popUpButton>
+                                                            </subviews>
+                                                        </view>
+                                                    </box>
+                                                    <box fixedFrame="YES" title="Notify me when…" translatesAutoresizingMaskIntoConstraints="NO" id="Cmt-n0-001">
+                                                        <rect key="frame" x="365" y="170" width="459" height="154"/>
+                                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                        <view key="contentView" id="Cmt-n0-002">
+                                                            <rect key="frame" x="4" y="5" width="451" height="134"/>
+                                                            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                            <subviews>
+                                                                <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Cmt-n0-003">
+                                                                    <rect key="frame" x="18" y="112" width="335" height="18"/>
+                                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                    <buttonCell key="cell" type="check" title="Someone comments on the code of a PR I created…" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="Cmt-n0-004">
+                                                                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                        <font key="font" metaFont="system"/>
+                                                                    </buttonCell>
+                                                                    <connections>
+                                                                        <action selector="notifyOnCodeCommentsSelected:" target="vQH-WF-vh2" id="Cmt-n0-005"/>
+                                                                    </connections>
+                                                                </button>
+                                                                <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Cmt-n0-006">
+                                                                    <rect key="frame" x="18" y="84" width="335" height="18"/>
+                                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                    <buttonCell key="cell" type="check" title="Someone replies to a thread I commented in…" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="Cmt-n0-007">
+                                                                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                        <font key="font" metaFont="system"/>
+                                                                    </buttonCell>
+                                                                    <connections>
+                                                                        <action selector="notifyOnCommentRepliesSelected:" target="vQH-WF-vh2" id="Cmt-n0-008"/>
+                                                                    </connections>
+                                                                </button>
+                                                                <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Cmt-n0-023">
+                                                                    <rect key="frame" x="18" y="56" width="335" height="18"/>
+                                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                    <buttonCell key="cell" type="check" title="Someone replies to a thread on a PR I created" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="Cmt-n0-024">
+                                                                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                        <font key="font" metaFont="system"/>
+                                                                    </buttonCell>
+                                                                    <connections>
+                                                                        <action selector="notifyOnRepliesOnMyItemsSelected:" target="vQH-WF-vh2" id="Cmt-n0-025"/>
+                                                                    </connections>
+                                                                </button>
+                                                                <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Cmt-n0-009">
+                                                                    <rect key="frame" x="18" y="28" width="335" height="18"/>
+                                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                    <buttonCell key="cell" type="check" title="Someone comments on an item I created…" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="Cmt-n0-010">
+                                                                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                        <font key="font" metaFont="system"/>
+                                                                    </buttonCell>
+                                                                    <connections>
+                                                                        <action selector="notifyOnItemCommentsSelected:" target="vQH-WF-vh2" id="Cmt-n0-011"/>
+                                                                    </connections>
+                                                                </button>
+                                                                <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Cmt-n0-012">
+                                                                    <rect key="frame" x="352" y="112" width="84" height="18"/>
+                                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                    <buttonCell key="cell" type="check" title="…or All" bezelStyle="regularSquare" imagePosition="right" alignment="right" state="on" inset="2" id="Cmt-n0-013">
+                                                                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                        <font key="font" metaFont="system"/>
+                                                                    </buttonCell>
+                                                                    <connections>
+                                                                        <action selector="notifyOnAllCodeCommentsSelected:" target="vQH-WF-vh2" id="Cmt-n0-014"/>
+                                                                    </connections>
+                                                                </button>
+                                                                <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Cmt-n0-015">
+                                                                    <rect key="frame" x="352" y="84" width="84" height="18"/>
+                                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                    <buttonCell key="cell" type="check" title="…or All" bezelStyle="regularSquare" imagePosition="right" alignment="right" state="on" inset="2" id="Cmt-n0-016">
+                                                                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                        <font key="font" metaFont="system"/>
+                                                                    </buttonCell>
+                                                                    <connections>
+                                                                        <action selector="notifyOnAllCommentRepliesSelected:" target="vQH-WF-vh2" id="Cmt-n0-017"/>
+                                                                    </connections>
+                                                                </button>
+                                                                <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Cmt-n0-018">
+                                                                    <rect key="frame" x="352" y="28" width="84" height="18"/>
+                                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                    <buttonCell key="cell" type="check" title="…or All" bezelStyle="regularSquare" imagePosition="right" alignment="right" state="on" inset="2" id="Cmt-n0-019">
+                                                                        <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                        <font key="font" metaFont="system"/>
+                                                                    </buttonCell>
+                                                                    <connections>
+                                                                        <action selector="notifyOnAllItemCommentsSelected:" target="vQH-WF-vh2" id="Cmt-n0-020"/>
+                                                                    </connections>
+                                                                </button>
+                                                                <textField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" setsMaxLayoutWidthAtFirstLayout="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Cmt-n0-021">
+                                                                    <rect key="frame" x="20" y="11" width="411" height="14"/>
+                                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                    <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="center" title="Reply notifications need the v4 API." id="Cmt-n0-022">
+                                                                        <font key="font" size="9" name="HelveticaNeue"/>
+                                                                        <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
+                                                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                    </textFieldCell>
+                                                                </textField>
                                                             </subviews>
                                                         </view>
                                                     </box>
@@ -2974,6 +3070,7 @@ in System Preferences -&gt; Security -&gt; Privacy.  Restart Trailer for the per
                 <outlet property="checkForUpdatesSelector" destination="AT5-aS-AgQ" id="s48-Pe-cgZ"/>
                 <outlet property="commentAuthorBlacklist" destination="DTL-cq-VaA" id="xWf-YT-bda"/>
                 <outlet property="commentAuthorBlacklistMode" destination="kUC-2w-J0s" id="T08-wm-Yz5"/>
+                <outlet property="commentNotificationNote" destination="Cmt-n0-021" id="Cmt-n0-030"/>
                 <outlet property="countSnoozedItems" destination="fpY-gk-scj" id="Eel-zY-BHV"/>
                 <outlet property="defaultOpenApp" destination="9gm-ih-X7o" id="Itu-YH-f0g"/>
                 <outlet property="defaultOpenLinks" destination="BEH-9y-PVP" id="KRd-mp-FUE"/>
@@ -3028,10 +3125,17 @@ in System Preferences -&gt; Security -&gt; Privacy.  Restart Trailer for the per
                 <outlet property="notifyOnAcceptances" destination="cUX-93-pkY" id="14e-Db-SMA"/>
                 <outlet property="notifyOnAllAcceptances" destination="Cle-hT-Lca" id="0Zq-p3-Lm7"/>
                 <outlet property="notifyOnAllChangeRequests" destination="4hX-kx-RH5" id="v0F-Kh-u4w"/>
+                <outlet property="notifyOnAllCodeComments" destination="Cmt-n0-012" id="Cmt-n0-031"/>
+                <outlet property="notifyOnAllCommentReplies" destination="Cmt-n0-015" id="Cmt-n0-032"/>
+                <outlet property="notifyOnAllItemComments" destination="Cmt-n0-018" id="Cmt-n0-033"/>
                 <outlet property="notifyOnAllReviewDismissals" destination="jjg-cq-Lfe" id="Wlg-gy-n40"/>
                 <outlet property="notifyOnChangeRequests" destination="W7P-8B-zzm" id="512-je-bpL"/>
+                <outlet property="notifyOnCodeComments" destination="Cmt-n0-003" id="Cmt-n0-034"/>
                 <outlet property="notifyOnCommentReactions" destination="6X8-zY-Oss" id="UFi-ne-Bc7"/>
+                <outlet property="notifyOnCommentReplies" destination="Cmt-n0-006" id="Cmt-n0-035"/>
+                <outlet property="notifyOnItemComments" destination="Cmt-n0-009" id="Cmt-n0-036"/>
                 <outlet property="notifyOnItemReactions" destination="ccb-WQ-p0n" id="J2b-31-J9w"/>
+                <outlet property="notifyOnRepliesOnMyItems" destination="Cmt-n0-023" id="Cmt-n0-037"/>
                 <outlet property="notifyOnReviewAssignments" destination="z39-OC-9iv" id="D8e-oi-A4Y"/>
                 <outlet property="notifyOnReviewDismissals" destination="8kt-mf-c4i" id="co3-xA-Iiq"/>
                 <outlet property="notifyOnStatusUpdates" destination="lAL-hp-XJt" id="Amv-PJ-TtL"/>
