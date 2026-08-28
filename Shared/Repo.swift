@@ -182,6 +182,23 @@ final class Repo: DataItem {
         Settings.repoHidingPolicies = policies
     }
 
+    /**
+     Copies the stored hiding policies onto the repository rows.
+
+     `itemHidingPolicy` no longer decides hiding, but the macOS repositories table sorts on it, so the
+     column sorts on the value it displays only while the two agree.
+     */
+    @MainActor
+    static func applyStoredHidingPolicies(in moc: NSManagedObjectContext) {
+        let policies = Settings.repoHidingPolicies
+        for repo in Repo.allItems(in: moc) {
+            let policy = hidingPolicy(for: repo.nodeId, in: policies).rawValue
+            if repo.itemHidingPolicy != policy {
+                repo.itemHidingPolicy = policy
+            }
+        }
+    }
+
     @discardableResult
     static func hideArchivedRepos(in moc: NSManagedObjectContext) -> Bool {
         var madeChanges = false
