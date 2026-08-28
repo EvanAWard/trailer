@@ -52,8 +52,7 @@ enum DataManager {
     /**
      Copies the hiding policy which each repository row holds into settings, once.
 
-     An entry which settings already hold wins, so that a run after a settings import cannot bring back
-     a policy which the imported file dropped.
+     A settings import also marks the seed done, so that the imported file decides the policies on its own.
      */
     private static func seedRepoHidingPolicies() {
         if Settings.repoHidingPoliciesMigrated {
