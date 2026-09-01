@@ -37,6 +37,8 @@ final class PullRequest: ListableItem {
     @NSManaged var headLabel: String?
     @NSManaged var baseLabel: String?
     @NSManaged var assignedReviewStatus: Int
+    /** The login of whoever last asked me, or one of my teams, for a review on this pull request. */
+    @NSManaged var reviewRequesterName: String?
     @NSManaged var changedFilePaths: String?
 
     @NSManaged var statuses: Set<PRStatus>
