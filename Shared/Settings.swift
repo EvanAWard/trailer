@@ -115,6 +115,7 @@ enum Settings {
         let notifyOnReviewChangeRequests = Settings.notifyOnReviewChangeRequests
         let notifyOnReviewAcceptances = Settings.notifyOnReviewAcceptances
         let notifyOnReviewDismissals = Settings.notifyOnReviewDismissals
+        let notifyOnMyReviewDismissals = Settings.notifyOnMyReviewDismissals
         let autoSnoozeDuration = TimeInterval(Settings.autoSnoozeDuration)
         let hidePrsThatArentPassing = Settings.hidePrsThatArentPassing
         let hidePrsThatDontPassOnlyInAll = Settings.hidePrsThatDontPassOnlyInAll
@@ -182,6 +183,7 @@ enum Settings {
 
             shouldSyncReviews = displayReviewsOnItems
                 || notifyOnReviewDismissals
+                || notifyOnMyReviewDismissals
                 || notifyOnReviewAcceptances
                 || notifyOnReviewChangeRequests
                 || autoHidePrsIApproved
@@ -209,7 +211,7 @@ enum Settings {
             "STATUS_FILTERING_TERMS_KEY", "COMMENT_AUTHOR_BLACKLIST", "HOTKEY_LETTER", "REFRESH_PERIOD_KEY", "IOS_BACKGROUND_REFRESH_PERIOD_KEY", "NEW_REPO_CHECK_PERIOD", "LAST_SUCCESSFUL_REFRESH", "LABEL_BLACKLIST",
             "LAST_RUN_VERSION_KEY", "UPDATE_CHECK_AUTO_KEY", "HIDE_UNCOMMENTED_PRS_KEY", "SHOW_COMMENTS_EVERYWHERE_KEY", "SORT_ORDER_KEY", "SHOW_UPDATED_KEY", "DONT_KEEP_MY_PRS_KEY", "HIDE_AVATARS_KEY", "HIDE_NOTIFICATION_AVATARS_KEY",
             "DONT_ASK_BEFORE_WIPING_MERGED", "DONT_ASK_BEFORE_WIPING_CLOSED", "HIDE_NEW_REPOS_KEY", "GROUP_BY_REPO", "HIDE_ALL_SECTION", "SHOW_STATUS_ITEMS", "NOTIFY_ON_REVIEW_ACCEPTANCES", "NOTIFY_ON_ALL_REVIEW_ACCEPTANCES", "NOTIFY_ON_REVIEW_ASSIGNMENTS",
-            "MAKE_STATUS_ITEMS_SELECTABLE", "COUNT_ONLY_LISTED_PRS", "OPEN_PR_AT_FIRST_UNREAD_COMMENT_KEY", "LOG_ACTIVITY_TO_CONSOLE_KEY", "NOTIFY_ON_REVIEW_DISMISSALS", "NOTIFY_ON_ALL_REVIEW_DISMISSALS",
+            "MAKE_STATUS_ITEMS_SELECTABLE", "COUNT_ONLY_LISTED_PRS", "OPEN_PR_AT_FIRST_UNREAD_COMMENT_KEY", "LOG_ACTIVITY_TO_CONSOLE_KEY", "NOTIFY_ON_REVIEW_DISMISSALS", "NOTIFY_ON_ALL_REVIEW_DISMISSALS", "NOTIFY_ON_MY_REVIEW_DISMISSALS",
             "HOTKEY_ENABLE", "HOTKEY_CONTROL_MODIFIER", "DISABLE_ALL_COMMENT_NOTIFICATIONS", "NOTIFY_ON_STATUS_UPDATES", "NOTIFY_ON_STATUS_UPDATES_ALL", "SHOW_REPOS_IN_NAME", "INCLUDE_REPOS_IN_FILTER", "SHOW_STATUSES_EVERYWHERE",
             "INCLUDE_LABELS_IN_FILTER", "INCLUDE_STATUSES_IN_FILTER", "HOTKEY_COMMAND_MODIFIER", "HOTKEY_OPTION_MODIFIER", "HOTKEY_SHIFT_MODIFIER", "GRAY_OUT_WHEN_REFRESHING", "SHOW_ISSUES_MENU", "NOTIFY_ON_ITEM_REACTIONS",
             "SHOW_ISSUES_IN_WATCH_GLANCE", "ASSIGNED_PR_HANDLING_POLICY", "HIDE_DESCRIPTION_IN_WATCH_DETAIL_VIEW", "AUTO_REPEAT_SETTINGS_EXPORT", "DONT_CONFIRM_SETTINGS_IMPORT", "NOTIFY_ON_COMMENT_REACTIONS", "REACTION_SCANNING_BATCH",
@@ -807,6 +809,10 @@ enum Settings {
     @UserDefault(key: "NOTIFY_ON_REVIEW_DISMISSALS", defaultValue: false)
     static var notifyOnReviewDismissals: Bool
     static let notifyOnReviewDismissalsHelp = "Issue a notification when someone dismissed a review in a PR that required changes."
+
+    @UserDefault(key: "NOTIFY_ON_MY_REVIEW_DISMISSALS", defaultValue: false)
+    static var notifyOnMyReviewDismissals: Bool
+    static let notifyOnMyReviewDismissalsHelp = "Issue a notification when someone dismisses a review that I submitted, on any PR that Trailer shows."
 
     @UserDefault(key: "NOTIFY_ON_ALL_REVIEW_CHANGE_REQUESTS", defaultValue: false)
     static var notifyOnAllReviewChangeRequests: Bool
