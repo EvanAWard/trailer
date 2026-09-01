@@ -129,6 +129,7 @@ extension NotificationType {
         case .changesApproved: "Changes Approved"
         case .changesRequested: "Changes Requested"
         case .changesDismissed: "Review Dismissed"
+        case .myReviewDismissed: "My Review Dismissed"
         case .newStatus: "PR Status Update"
         case .newRepoSubscribed: "New Repo Subscribed"
         case .newRepoAnnouncement: "New Repository"
@@ -140,7 +141,7 @@ extension NotificationType {
         case .newComment, .newMention, .newReaction: .comments
         case .newPr, .prReopened, .prMerged, .prClosed, .newPrAssigned: .pullRequests
         case .newIssue, .issueReopened, .issueClosed, .newIssueAssigned: .issues
-        case .assignedForReview, .assignedToTeamForReview, .changesApproved, .changesRequested, .changesDismissed: .reviews
+        case .assignedForReview, .assignedToTeamForReview, .changesApproved, .changesRequested, .changesDismissed, .myReviewDismissed: .reviews
         case .newStatus: .statuses
         case .newRepoSubscribed, .newRepoAnnouncement: .repositories
         }
@@ -157,7 +158,8 @@ extension NotificationType {
         case .newComment: "Comments"
         case .newReaction: "Reactions"
         case .assignedForReview, .assignedToTeamForReview,
-             .changesApproved, .changesDismissed, .changesRequested: "Reviews"
+             .changesApproved, .changesDismissed, .changesRequested,
+             .myReviewDismissed: "Reviews"
         case .newStatus: "Statuses"
         case .issueClosed, .issueReopened, .newIssue, .newIssueAssigned,
              .newMention, .newPr, .newPrAssigned, .newRepoAnnouncement,

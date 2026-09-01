@@ -128,10 +128,11 @@ final class Review: DataItem {
             }
         case .DISMISSED:
             // A review holds its author, not whoever dismissed it, so a dismissal I make myself notifies too.
-            let notify = isMine
-                ? settings.notifyOnMyReviewDismissals
-                : (settings.notifyOnAllReviewDismissals || (settings.notifyOnReviewDismissals && pullRequest.createdByMe))
-            if notify {
+            if isMine {
+                if settings.notifyOnMyReviewDismissals {
+                    NotificationQueue.add(type: .myReviewDismissed, for: self)
+                }
+            } else if settings.notifyOnAllReviewDismissals || (settings.notifyOnReviewDismissals && pullRequest.createdByMe) {
                 NotificationQueue.add(type: .changesDismissed, for: self)
             }
         }
