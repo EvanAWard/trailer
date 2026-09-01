@@ -423,7 +423,7 @@ enum GraphQL {
         }
 
         let profile = settings.syncProfile
-        try await process(name: steps.toString, items: items, parentType: T.self, maxCost: profile.itemAccompanyingBatchCount) {
+        try await process(name: steps.toString, items: items, parentType: T.self, maxCost: profile.itemAccompanyingBatchCount, settings: settings) {
             Fragment(on: typeName) {
                 Field.id
 
@@ -513,8 +513,9 @@ enum GraphQL {
         }
     }
 
-    static func updateReactions(for comments: [PRComment], profile: Profile) async throws {
-        try await process(name: "Comment Reactions", items: comments, maxCost: profile.itemAccompanyingBatchCount) {
+    static func updateReactions(for comments: [PRComment], settings: Settings.Cache) async throws {
+        let profile = settings.syncProfile
+        try await process(name: "Comment Reactions", items: comments, maxCost: profile.itemAccompanyingBatchCount, settings: settings) {
             Fragment(on: "IssueComment") {
                 Field.id
                 Group("reactions", paging: profile.largePageSize) {
@@ -529,8 +530,9 @@ enum GraphQL {
         }
     }
 
-    static func updateComments(for reviews: [Review], profile: Profile) async throws {
-        try await process(name: "Review Comments", items: reviews, maxCost: profile.itemAccompanyingBatchCount) {
+    static func updateComments(for reviews: [Review], settings: Settings.Cache) async throws {
+        let profile = settings.syncProfile
+        try await process(name: "Review Comments", items: reviews, maxCost: profile.itemAccompanyingBatchCount, settings: settings) {
             Fragment(on: "PullRequestReview") {
                 Field.id
                 commentGroup(for: "PullRequestReviewComment", profile: profile)
@@ -538,7 +540,7 @@ enum GraphQL {
         }
     }
 
-    private static func process(name: String, items: [DataItem], parentType: (some ListableItem).Type? = nil, maxCost: Int, @ElementsBuilder fields: () -> [any Element]) async throws {
+    private static func process(name: String, items: [DataItem], parentType: (some ListableItem).Type? = nil, maxCost: Int, settings: Settings.Cache, @ElementsBuilder fields: () -> [any Element]) async throws {
         if items.isEmpty {
             return
         }
@@ -556,7 +558,7 @@ enum GraphQL {
             }
         }
         for (server, ids) in itemIdsByServer {
-            let scanner = NodeScanner(server: server, parentType: parentType)
+            let scanner = NodeScanner(server: server, parentType: parentType, settings: settings)
             let serverName = server.label ?? "<no label>"
             let queries = Query.batching("\(serverName): \(name)", groupName: "nodes", idList: ids, maxCost: maxCost, perNode: { scanner.add(progress: $0) }, fields: fields)
             do {
@@ -657,7 +659,7 @@ enum GraphQL {
                         prFragment(includeRepo: true, settings: settings)
                     }
                     group.addTask {
-                        if let nodes = await fetchAllAuthoredItems(from: server, label: "PRs", fields: { g }) {
+                        if let nodes = await fetchAllAuthoredItems(from: server, label: "PRs", settings: settings, fields: { g }) {
                             await checkAuthoredPrClosures(nodes: nodes, in: server, settings: settings)
                         }
                     }
@@ -676,7 +678,7 @@ enum GraphQL {
                         issueFragment(includeRepo: true, settings: settings)
                     }
                     group.addTask {
-                        if let nodes = await fetchAllAuthoredItems(from: server, label: "Issues", fields: { g }) {
+                        if let nodes = await fetchAllAuthoredItems(from: server, label: "Issues", settings: settings, fields: { g }) {
                             await checkAuthoredIssueClosures(nodes: nodes, in: server)
                         }
                     }
@@ -687,9 +689,9 @@ enum GraphQL {
         }
     }
 
-    static func fetchAllAuthoredItems(from server: ApiServer, label: String, @ElementsBuilder fields: () -> [any Element]) async -> Lista<Node>? {
+    static func fetchAllAuthoredItems(from server: ApiServer, label: String, settings: Settings.Cache, @ElementsBuilder fields: () -> [any Element]) async -> Lista<Node>? {
         let group = Group("viewer", fields: fields)
-        let scanner = NodeScanner(server: server, parentType: nil)
+        let scanner = NodeScanner(server: server, parentType: nil, settings: settings)
         do {
             let nodesList = Lista<Node>()
             let authoredItemsQuery = Query(name: "Authored \(label)", rootElement: group) {
@@ -723,7 +725,7 @@ enum GraphQL {
 
         let prGroup = Group("pullRequests") { prFragment(includeRepo: true, settings: settings) }
         let group = BatchGroup(name: "nodes", templateGroup: prGroup, idList: prIdsToCheck)
-        let scanner = NodeScanner(server: server, parentType: nil)
+        let scanner = NodeScanner(server: server, parentType: nil, settings: settings)
         let query = Query(name: "Closed Authored PRs", rootElement: group, allowsEmptyResponse: true) {
             scanner.add(progress: $0, forcedUpdate: true)
         }
@@ -796,7 +798,7 @@ enum GraphQL {
 
         let prRepoIdToLatestExistingUpdate = _prRepoIdToLatestExistingUpdate
         for (server, reposInThisServer) in reposByServer {
-            let scanner = NodeScanner(server: server, parentType: nil)
+            let scanner = NodeScanner(server: server, parentType: nil, settings: settings)
 
             let perNodeBlock: Query.PerNodeBlock = { progress throws(TQL.Error) in
                 scanner.add(progress: progress)
@@ -862,7 +864,7 @@ enum GraphQL {
 
         let issueRepoIdToLatestExistingUpdate = _issueRepoIdToLatestExistingUpdate
         for (server, reposInThisServer) in reposByServer {
-            let scanner = NodeScanner(server: server, parentType: nil)
+            let scanner = NodeScanner(server: server, parentType: nil, settings: settings)
 
             let perNodeBlock: Query.PerNodeBlock = { progress throws(TQL.Error) in
                 scanner.add(progress: progress)
@@ -978,15 +980,17 @@ enum GraphQL {
 
         // protected by scannerMoc
         private nonisolated(unsafe) let scannerServer: ApiServer
+        private nonisolated(unsafe) let scannerSettings: Settings.Cache
         private nonisolated(unsafe) let parentCache = FetchCache()
         private nonisolated(unsafe) var nodes = [String: Lista<Node>]()
         private nonisolated(unsafe) let filePathCollector = FilePathCollector()
 
-        init(server: ApiServer, parentType: (some DataItem).Type?) {
+        init(server: ApiServer, parentType: (some DataItem).Type?, settings: Settings.Cache) {
             let child = server.managedObjectContext!.buildChildContext()
             scannerMoc = child
             scannerServer = try! child.existingObject(with: server.objectID) as! ApiServer
             self.parentType = parentType
+            scannerSettings = settings
         }
 
         func add(progress: ParseOutput, forcedUpdate: Bool = false) {
@@ -1067,7 +1071,7 @@ enum GraphQL {
                 Reaction.sync(from: nodeList, for: parentType, on: scannerServer, moc: scannerMoc, parentCache: parentCache)
             }
             if let nodeList = nodes["ReviewRequest"] {
-                Review.syncRequests(from: nodeList, moc: scannerMoc, parentCache: parentCache)
+                Review.syncRequests(from: nodeList, moc: scannerMoc, parentCache: parentCache, settings: scannerSettings)
             }
             if let nodeList = nodes["PullRequestReview"] {
                 Review.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache)

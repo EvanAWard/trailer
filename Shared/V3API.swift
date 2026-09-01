@@ -179,7 +179,7 @@ extension API {
 
             if settings.shouldSyncReviewAssignments {
                 group.addTask {
-                    await fetchReviewAssignmentsForCurrentPullRequests(for: newOrUpdatedPrs)
+                    await fetchReviewAssignmentsForCurrentPullRequests(for: newOrUpdatedPrs, settings: settings)
                 }
             }
 
@@ -451,7 +451,7 @@ extension API {
         }
     }
 
-    private static func fetchReviewAssignmentsForCurrentPullRequests(for prs: [PullRequest]) async {
+    private static func fetchReviewAssignmentsForCurrentPullRequests(for prs: [PullRequest], settings: Settings.Cache) async {
         await withThrowingTaskGroup { group in
             for p in prs {
                 group.addTask { @MainActor in
@@ -465,7 +465,7 @@ extension API {
                         for userName in userList.compactMap({ $0.potentialString(named: "login") }) {
                             reviewUsers.insert(userName)
                         }
-                        p.checkAndStoreReviewAssignments(reviewUsers, reviewTeams)
+                        p.checkAndStoreReviewAssignments(reviewUsers, reviewTeams, settings: settings)
 
                     } else if let data, let userList = data.potentialArray(named: "users"), let teamList = data.potentialArray(named: "teams") {
                         // New API results
@@ -475,7 +475,7 @@ extension API {
                         for teamName in teamList.compactMap({ $0.potentialString(named: "slug") }) {
                             reviewTeams.insert(teamName)
                         }
-                        p.checkAndStoreReviewAssignments(reviewUsers, reviewTeams)
+                        p.checkAndStoreReviewAssignments(reviewUsers, reviewTeams, settings: settings)
 
                     } else {
                         p.apiServer.lastSyncSucceeded = false
