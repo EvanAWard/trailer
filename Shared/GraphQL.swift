@@ -191,12 +191,20 @@ enum GraphQL {
         }
     }
 
+    /** How far back the first sync reads review events, when no earlier sync has set an anchor. */
+    private static let firstSyncReviewEventWindow: TimeInterval = 30 * 24 * 3600
+
     private static let nameWithOwnerField = Field("nameWithOwner")
 
     private static let userFragment = Fragment(on: "User") {
         Field.id
         Field("login")
         Field("avatarUrl")
+    }
+
+    private static let teamFragment = Fragment(on: "Team") {
+        Field.id
+        Field("slug")
     }
 
     private static let mannequinFragment = Fragment(on: "Mannequin") {
@@ -392,6 +400,8 @@ enum GraphQL {
     static func update<T: ListableItem>(for items: [T], steps: API.SyncSteps, settings: Settings.Cache) async throws {
         let typeName = T.typeName
 
+        var reviewEventSince = Date(timeIntervalSinceNow: -firstSyncReviewEventWindow)
+
         if let prs = items as? [PullRequest] {
             if steps.contains(.reviews) {
                 for pr in prs {
@@ -408,6 +418,16 @@ enum GraphQL {
                     for status in pr.statuses {
                         status.postSyncAction = PostSyncAction.delete.rawValue
                     }
+                }
+            }
+
+            if steps.contains(.reviewDismissers) || steps.contains(.reviewRequesters) {
+                // one query serves the whole batch, so the oldest watermark of the batch is the only safe anchor
+                let now = Date()
+                let oldest = prs.map { $0.lastReviewEventScan ?? .distantPast }.min() ?? .distantPast
+                reviewEventSince = max(oldest, reviewEventSince)
+                for pr in prs {
+                    pr.lastReviewEventScan = now
                 }
             }
         }
@@ -431,6 +451,15 @@ enum GraphQL {
         }
 
         let profile = settings.syncProfile
+
+        var timelineItemTypes = [String]()
+        if steps.contains(.reviewDismissers) {
+            timelineItemTypes.append("REVIEW_DISMISSED_EVENT")
+        }
+        if steps.contains(.reviewRequesters) {
+            timelineItemTypes.append("REVIEW_REQUESTED_EVENT")
+        }
+
         try await process(name: steps.toString, items: items, parentType: T.self, maxCost: profile.itemAccompanyingBatchCount, settings: settings) {
             Fragment(on: typeName) {
                 Field.id
@@ -443,10 +472,7 @@ enum GraphQL {
                                 Group("requestedReviewer") {
                                     userFragment
                                     mannequinFragment
-                                    Fragment(on: "Team") {
-                                        Field.id
-                                        Field("slug")
-                                    }
+                                    teamFragment
                                 }
                             }
                         }
@@ -461,6 +487,34 @@ enum GraphQL {
                                 Field("createdAt")
                                 Field("updatedAt")
                                 authorGroup
+                            }
+                        }
+                    }
+
+                    if !timelineItemTypes.isEmpty {
+                        // the window is bounded by time, so no event type can crowd out another, and a long gap
+                        // between syncs is covered by paging instead of being cut short
+                        Group("timelineItems",
+                              ("itemTypes", "[\(timelineItemTypes.joined(separator: ", "))]"),
+                              ("since", Date.Formatters.iso8601.format(reviewEventSince)),
+                              paging: profile.smallPageSize) {
+                            if steps.contains(.reviewDismissers) {
+                                Fragment(on: "ReviewDismissedEvent") {
+                                    Field.id
+                                    Group("actor") { Field("login") }
+                                    // the alias keeps TrailerQL from reading the nested review as a node and syncing it as a blank row
+                                    Group("review") { Field("dismissedReviewNodeId: id") }
+                                }
+                            }
+                            if steps.contains(.reviewRequesters) {
+                                Fragment(on: "ReviewRequestedEvent") {
+                                    Field.id
+                                    Group("actor") { Field("login") }
+                                    Group("requestedReviewer") {
+                                        userFragment
+                                        teamFragment
+                                    }
+                                }
                             }
                         }
                     }
