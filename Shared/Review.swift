@@ -7,6 +7,8 @@ final class Review: DataItem {
     @NSManaged var body: String?
     @NSManaged var username: String?
     @NSManaged var state: String?
+    /** The login of whoever dismissed this review. GitHub does not carry it on the review itself, so a sync path which reads no events leaves it nil. */
+    @NSManaged var dismisserName: String?
 
     @NSManaged var pullRequest: PullRequest
     @NSManaged var comments: Set<PRComment>
