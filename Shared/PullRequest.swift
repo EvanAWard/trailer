@@ -282,6 +282,11 @@ final class PullRequest: ListableItem {
         snoozeUntil != nil && shouldWakeOnComment && hasNewCommits
     }
 
+    /** Whether I asked for the review on this pull request. A request with no recorded actor counts as somebody else's act. */
+    var reviewRequestedByMe: Bool {
+        apiServer.isMe(reviewRequesterName)
+    }
+
     private func setAssignedReviewStatus(to status: AssignmentStatus, settings: Settings.Cache) {
         if assignedReviewStatus == status.rawValue {
             return
@@ -289,7 +294,7 @@ final class PullRequest: ListableItem {
 
         assignedReviewStatus = status.rawValue
 
-        guard settings.notifyOnReviewAssignments, !createdByMe else {
+        guard settings.notifyOnReviewAssignments, !createdByMe, !reviewRequestedByMe else {
             return
         }
 
@@ -307,15 +312,20 @@ final class PullRequest: ListableItem {
         reviewers = reviewerNames.joined(separator: ",")
         teamReviewers = reviewerTeams.joined(separator: ",")
 
-        if reviewerNames.contains(apiServer.userName.orEmpty) {
-            setAssignedReviewStatus(to: .me, settings: settings)
+        let status: AssignmentStatus = if reviewerNames.contains(apiServer.userName.orEmpty) {
+            .me
         } else if reviewerTeams.isEmpty {
-            setAssignedReviewStatus(to: .none, settings: settings)
-        } else if apiServer.teams.compactMap(\.slug).contains(where: { reviewerTeams.contains($0) }) {
-            setAssignedReviewStatus(to: .myTeam, settings: settings)
+            .none
+        } else if apiServer.myTeamSlugs.contains(where: { reviewerTeams.contains($0) }) {
+            .myTeam
         } else {
-            setAssignedReviewStatus(to: .others, settings: settings)
+            .others
         }
+
+        if status == .none || status == .others {
+            reviewRequesterName = nil
+        }
+        setAssignedReviewStatus(to: status, settings: settings)
     }
 
     @MainActor
