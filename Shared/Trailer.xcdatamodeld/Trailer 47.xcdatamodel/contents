@@ -188,15 +188,16 @@
         <attribute name="muted" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="nodeId" optional="YES" attributeType="String" versionHashModifier="42"/>
         <attribute name="number" optional="YES" attributeType="Integer 64" usesScalarValueType="YES"/>
+        <attribute name="personalReviewRequesterName" optional="YES" attributeType="String"/>
         <attribute name="postSyncAction" optional="YES" attributeType="Integer 64" usesScalarValueType="YES"/>
         <attribute name="reviewers" optional="YES" attributeType="String"/>
-        <attribute name="reviewRequesterName" optional="YES" attributeType="String"/>
         <attribute name="sectionIndex" optional="YES" attributeType="Integer 64" usesScalarValueType="YES"/>
         <attribute name="serverId" optional="YES" attributeType="Integer 64" usesScalarValueType="YES"/>
         <attribute name="snoozeUntil" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="stateChanged" optional="YES" attributeType="Integer 64" usesScalarValueType="YES"/>
         <attribute name="statusesLink" optional="YES" attributeType="String"/>
         <attribute name="teamReviewers" optional="YES" attributeType="String"/>
+        <attribute name="teamReviewRequesterName" optional="YES" attributeType="String"/>
         <attribute name="title" optional="YES" attributeType="String"/>
         <attribute name="totalComments" optional="YES" attributeType="Integer 64" usesScalarValueType="YES"/>
         <attribute name="unreadComments" optional="YES" attributeType="Integer 64" usesScalarValueType="YES"/>

@@ -5,15 +5,20 @@ import TrailerJson
 /**
  The review actors which one pass of the issue event scan collected. A dismissal is held here rather
  than applied at once, because a v3 review row is keyed on `serverId` and may not exist until the
- review fetch has run. This also enforces first-seen-wins for both actors, because the issue event
- stream this collector is fed from runs newest first, so the first match for a review or a pull
- request is the newest one and is the one that should be kept.
+ review fetch has run. This also enforces first-seen-wins for every actor, because the issue event
+ stream this collector is fed from runs newest first, so the first match for a review, or for one
+ kind of review request on a pull request, is the newest one and is the one that should be kept.
  */
 @MainActor
 final class ReviewActorCollector {
     /** The dismisser of each review, keyed by server, because a review id is unique to its server only. */
     private(set) var dismissers = [NSManagedObjectID: [Int: String]]()
-    private var requestedPullRequests = Set<NSManagedObjectID>()
+    private var requestedPullRequests = [RequestKind: Set<NSManagedObjectID>]()
+
+    /** The kind of review request an actor made. */
+    enum RequestKind {
+        case personal, team
+    }
 
     /** Keeps the first login offered for a review. */
     func addDismisser(_ login: String, forReview reviewId: Int, on server: ApiServer) {
@@ -23,10 +28,16 @@ final class ReviewActorCollector {
         }
     }
 
-    /** Stores the first login offered for a pull request. */
-    func setRequester(_ login: String, on pullRequest: PullRequest) {
-        if requestedPullRequests.insert(pullRequest.objectID).inserted {
-            pullRequest.reviewRequesterName = login
+    /** Stores the first login offered for one kind of review request on a pull request. */
+    func setRequester(_ login: String, on pullRequest: PullRequest, kind: RequestKind) {
+        guard requestedPullRequests[kind, default: []].insert(pullRequest.objectID).inserted else {
+            return
+        }
+        switch kind {
+        case .personal:
+            pullRequest.personalReviewRequesterName = login
+        case .team:
+            pullRequest.teamReviewRequesterName = login
         }
     }
 }
@@ -103,7 +114,8 @@ extension API {
 
         /**
          Reads one issue event and keeps it when it names a review actor. A review request is applied at
-         once, and only when it names me or one of my teams. Any other event is ignored.
+         once, and only when it names me or one of my teams, and is filed by the kind of request it made.
+         Any other event is ignored.
          */
         func read(_ event: TypedJson.Entry, named name: String) {
             switch name {
@@ -124,12 +136,12 @@ extension API {
                 // An event carries a reviewer or a team, never both, so this chain is safe.
                 if let login = event.potentialObject(named: "requested_reviewer")?.potentialString(named: "login") {
                     if apiServer.isMe(login), let pr = prsByNumber[issueNumber] {
-                        collector.setRequester(actor, on: pr)
+                        collector.setRequester(actor, on: pr, kind: .personal)
                     }
                 } else if let slug = event.potentialObject(named: "requested_team")?.potentialString(named: "slug"),
                           myTeamSlugs.contains(slug),
                           let pr = prsByNumber[issueNumber] {
-                    collector.setRequester(actor, on: pr)
+                    collector.setRequester(actor, on: pr, kind: .team)
                 }
 
             default:
