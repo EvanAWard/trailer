@@ -324,6 +324,9 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     private func showOptionalReviewWarning(previousSync: Bool) {
         updateReviewOptions()
 
+        // The write which brought us here rebuilds the snapshot in a task of its own, so read a fresh one.
+        Settings.refreshCache()
+
         if !previousSync, Settings.cache.requiresReviewApis {
             for p in PullRequest.allItems(in: DataManager.main) {
                 p.resetSyncState()
@@ -444,6 +447,9 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     }
 
     private func showOptionalReviewAssignmentWarning(previousSync: Bool) {
+        // The write which brought us here rebuilds the snapshot in a task of its own, so read a fresh one.
+        Settings.refreshCache()
+
         if !previousSync, Settings.cache.requiresReviewApis {
             for p in PullRequest.allItems(in: DataManager.main) {
                 p.resetSyncState()
