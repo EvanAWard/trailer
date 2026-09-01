@@ -170,6 +170,8 @@ enum Settings {
         let shouldSyncReactions: Bool
         let shouldSyncReviews: Bool
         let shouldSyncReviewAssignments: Bool
+        let shouldSyncReviewDismissers: Bool
+        let shouldSyncReviewRequesters: Bool
         let shouldSyncFilePaths: Bool
 
         init() {
@@ -181,11 +183,16 @@ enum Settings {
 
             shouldSyncFilePaths = !pathFilterPatterns.isEmpty && pathFilterMovePolicy != nil
 
-            shouldSyncReviews = displayReviewsOnItems
-                || notifyOnReviewDismissals
+            let anyDismissalNotifications = notifyOnReviewDismissals
+                || notifyOnAllReviewDismissals
                 || notifyOnMyReviewDismissals
+
+            shouldSyncReviews = displayReviewsOnItems
+                || anyDismissalNotifications
                 || notifyOnReviewAcceptances
+                || notifyOnAllReviewAcceptances
                 || notifyOnReviewChangeRequests
+                || notifyOnAllReviewChangeRequests
                 || autoHidePrsIApproved
                 || autoHidePrsIRejected
 
@@ -194,6 +201,10 @@ enum Settings {
                 || notifyOnReviewAssignments
                 || (assignedDirectReviewHandlingPolicy.visible)
                 || (assignedTeamReviewHandlingPolicy.visible)
+
+            shouldSyncReviewDismissers = anyDismissalNotifications
+
+            shouldSyncReviewRequesters = notifyOnReviewAssignments
 
             requiresReviewApis = shouldSyncReviews || shouldSyncReviewAssignments
         }
