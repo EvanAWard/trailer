@@ -176,6 +176,7 @@
         <attribute name="isNewAssignment" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="issueUrl" optional="YES" attributeType="String"/>
         <attribute name="lastReactionScan" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="lastReviewEventScan" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="lastStatusNotified" optional="YES" attributeType="String"/>
         <attribute name="lastStatusScan" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="latestReadCommentDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
