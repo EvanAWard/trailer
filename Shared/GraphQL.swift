@@ -1123,8 +1123,8 @@ enum GraphQL {
         }
 
         /**
-         Records who asked me, or one of my teams, for a review. A request which names somebody else is
-         dropped, because only my own assignment raises a notification.
+         Records who asked me, or one of my teams, for a review, filed by the kind of request it made. A
+         request which names somebody else is dropped, because only my own assignment raises a notification.
          */
         private func storeReviewRequesters(from nodeList: Lista<Node>) {
             let myTeams = scannerServer.myTeamSlugs
@@ -1145,7 +1145,11 @@ enum GraphQL {
                 }
                 // `timelineItems` arrives oldest first (unlike the v3 issue-events scan), so the last
                 // write here is the newest event, and is the one that should be kept.
-                pr.reviewRequesterName = actor
+                if namesMe {
+                    pr.personalReviewRequesterName = actor
+                } else {
+                    pr.teamReviewRequesterName = actor
+                }
             }
         }
 
