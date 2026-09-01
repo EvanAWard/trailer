@@ -275,14 +275,14 @@ final class PullRequest: ListableItem {
         snoozeUntil != nil && shouldWakeOnComment && hasNewCommits
     }
 
-    private func setAssignedReviewStatus(to status: AssignmentStatus) {
+    private func setAssignedReviewStatus(to status: AssignmentStatus, settings: Settings.Cache) {
         if assignedReviewStatus == status.rawValue {
             return
         }
 
         assignedReviewStatus = status.rawValue
 
-        guard Settings.notifyOnReviewAssignments, !createdByMe else {
+        guard settings.notifyOnReviewAssignments, !createdByMe else {
             return
         }
 
@@ -296,18 +296,18 @@ final class PullRequest: ListableItem {
         }
     }
 
-    func checkAndStoreReviewAssignments(_ reviewerNames: Set<String>, _ reviewerTeams: Set<String>) {
+    func checkAndStoreReviewAssignments(_ reviewerNames: Set<String>, _ reviewerTeams: Set<String>, settings: Settings.Cache) {
         reviewers = reviewerNames.joined(separator: ",")
         teamReviewers = reviewerTeams.joined(separator: ",")
 
         if reviewerNames.contains(apiServer.userName.orEmpty) {
-            setAssignedReviewStatus(to: .me)
+            setAssignedReviewStatus(to: .me, settings: settings)
         } else if reviewerTeams.isEmpty {
-            setAssignedReviewStatus(to: .none)
+            setAssignedReviewStatus(to: .none, settings: settings)
         } else if apiServer.teams.compactMap(\.slug).contains(where: { reviewerTeams.contains($0) }) {
-            setAssignedReviewStatus(to: .myTeam)
+            setAssignedReviewStatus(to: .myTeam, settings: settings)
         } else {
-            setAssignedReviewStatus(to: .others)
+            setAssignedReviewStatus(to: .others, settings: settings)
         }
     }
 
