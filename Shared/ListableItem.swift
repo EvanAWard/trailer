@@ -185,7 +185,7 @@ class ListableItem: DataItem, Listable {
 
         if let assigneeJson, !assigneeJson.isEmpty {
             let myIdOnThisRepo = repo.apiServer.userNodeId
-            let myTeamNames = Set(apiServer.teams.compactMap(\.slug))
+            let myTeamNames = apiServer.myTeamSlugs
 
             for assignee in assigneeJson {
                 if let name = assignee.potentialString(named: "login"), let assigneeId = assignee.potentialString(named: idField) {

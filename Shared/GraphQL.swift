@@ -1046,6 +1046,7 @@ enum GraphQL {
         private nonisolated(unsafe) let parentCache = FetchCache()
         private nonisolated(unsafe) var nodes = [String: Lista<Node>]()
         private nonisolated(unsafe) let filePathCollector = FilePathCollector()
+        private nonisolated(unsafe) var collectedDismissers = [String: String]()
 
         init(server: ApiServer, parentType: (some DataItem).Type?, settings: Settings.Cache) {
             let child = server.managedObjectContext!.buildChildContext()
@@ -1084,10 +1085,18 @@ enum GraphQL {
                     }
                     flush()
                     if storingFilePaths {
+                        applyPendingReviewDismissers()
                         storePendingFilePaths()
                     }
                     continuation.resume()
                 }
+            }
+        }
+
+        /** Writes the dismisser of each collected event whose review row exists. */
+        private func applyPendingReviewDismissers() {
+            for (reviewNodeId, actor) in collectedDismissers {
+                Review.item(id: reviewNodeId, in: scannerMoc)?.dismisserName = actor
             }
         }
 
@@ -1100,10 +1109,47 @@ enum GraphQL {
             }
         }
 
+        /**
+         Records who asked me, or one of my teams, for a review. A request which names somebody else is
+         dropped, because only my own assignment raises a notification.
+         */
+        private func storeReviewRequesters(from nodeList: Lista<Node>) {
+            let myTeams = scannerServer.myTeamSlugs
+
+            for node in nodeList {
+                guard let parentId = node.parent?.id,
+                      let actor = node.jsonPayload.potentialObject(named: "actor")?.potentialString(named: "login"),
+                      let reviewer = node.jsonPayload.potentialObject(named: "requestedReviewer") else {
+                    continue
+                }
+
+                let namesMe = scannerServer.isMe(reviewer.potentialString(named: "login"))
+                let namesMyTeam = reviewer.potentialString(named: "slug").map(myTeams.contains) ?? false
+
+                guard namesMe || namesMyTeam,
+                      let pr = PullRequest.asParent(with: parentId, in: scannerMoc, parentCache: parentCache) else {
+                    continue
+                }
+                pr.reviewRequesterName = actor
+            }
+        }
+
+        /** Holds the dismisser of each named review until the scan ends, because its row may come on a later page. */
+        private func collectReviewDismissers(from nodeList: Lista<Node>) {
+            for node in nodeList {
+                guard let actor = node.jsonPayload.potentialObject(named: "actor")?.potentialString(named: "login"),
+                      let reviewNodeId = node.jsonPayload.potentialObject(named: "review")?.potentialString(named: "dismissedReviewNodeId") else {
+                    continue
+                }
+                collectedDismissers[reviewNodeId] = actor
+            }
+        }
+
         private func flush() {
             if nodes.isEmpty { return }
 
             // Order must be fixed, since labels may refer to PRs or Issues, ensure they are created first
+            // A review requester is ordered too: it is written onto the row which PullRequest.sync makes.
 
             if let nodeList = nodes["Repository"] {
                 Repo.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache)
@@ -1129,11 +1175,17 @@ enum GraphQL {
             if let nodeList = nodes["Reaction"], let parentType {
                 Reaction.sync(from: nodeList, for: parentType, on: scannerServer, moc: scannerMoc, parentCache: parentCache)
             }
+            if let nodeList = nodes["ReviewRequestedEvent"] {
+                storeReviewRequesters(from: nodeList)
+            }
             if let nodeList = nodes["ReviewRequest"] {
                 Review.syncRequests(from: nodeList, moc: scannerMoc, parentCache: parentCache, settings: scannerSettings)
             }
             if let nodeList = nodes["PullRequestReview"] {
                 Review.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache)
+            }
+            if let nodeList = nodes["ReviewDismissedEvent"] {
+                collectReviewDismissers(from: nodeList)
             }
             if let nodeList = nodes["StatusContext"] {
                 PRStatus.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache)
