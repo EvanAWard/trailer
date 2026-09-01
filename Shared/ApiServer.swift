@@ -26,6 +26,17 @@ final class ApiServer: NSManagedObject {
     @NSManaged var reviews: Set<Review>
     @NSManaged var reactions: Set<Reaction>
 
+    /** The slugs of every team I belong to on this server. */
+    var myTeamSlugs: Set<String> {
+        Set(teams.compactMap(\.slug))
+    }
+
+    /** Whether this login is mine. An unknown login, or an unknown user name, is not me. */
+    func isMe(_ login: String?) -> Bool {
+        guard let login, let userName else { return false }
+        return login == userName
+    }
+
     @MainActor
     static var lastReportedOverLimit = Set<NSManagedObjectID>()
 
