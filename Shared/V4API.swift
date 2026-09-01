@@ -32,6 +32,8 @@ extension API {
         static let reviewRequests = SyncSteps(rawValue: 1 << 3)
         static let statuses = SyncSteps(rawValue: 1 << 4)
         static let filePaths = SyncSteps(rawValue: 1 << 5)
+        static let reviewDismissers = SyncSteps(rawValue: 1 << 6)
+        static let reviewRequesters = SyncSteps(rawValue: 1 << 7)
 
         var toString: String {
             var ret = [String]()
@@ -41,6 +43,8 @@ extension API {
             if contains(.reviewRequests) { ret.append("Requests") }
             if contains(.statuses) { ret.append("Statuses") }
             if contains(.filePaths) { ret.append("File Paths") }
+            if contains(.reviewDismissers) { ret.append("Review Dismissers") }
+            if contains(.reviewRequesters) { ret.append("Review Requesters") }
             return ret.joined(separator: ", ")
         }
     }
@@ -60,6 +64,14 @@ extension API {
             for r in Review.allItems(in: moc) {
                 r.postSyncAction = PostSyncAction.delete.rawValue
             }
+        }
+
+        if settings.shouldSyncReviewDismissers {
+            steps.insert(.reviewDismissers)
+        }
+
+        if settings.shouldSyncReviewRequesters {
+            steps.insert(.reviewRequesters)
         }
 
         let prTask = Task {

@@ -39,6 +39,8 @@ final class PullRequest: ListableItem {
     @NSManaged var assignedReviewStatus: Int
     /** The login of whoever last asked me, or one of my teams, for a review on this pull request. */
     @NSManaged var reviewRequesterName: String?
+    /** When the review events of this pull request were last asked for. The next query reads from here. */
+    @NSManaged var lastReviewEventScan: Date?
     @NSManaged var changedFilePaths: String?
 
     @NSManaged var statuses: Set<PRStatus>
