@@ -240,7 +240,7 @@ final class NotificationManager: NSObject {
             guard let r = item.asReview else { return }
             let p = r.pullRequest
             if p.shouldSkipNotifications { return }
-            notification.title = "@\(r.username.orEmpty) Dismissed A Review"
+            notification.title = r.isMine ? "Your Review Was Dismissed" : "@\(r.username.orEmpty) Dismissed A Review"
             notification.subtitle = p.title.orEmpty
             notification.body = r.body.orEmpty
             notification.categoryIdentifier = "mutable"

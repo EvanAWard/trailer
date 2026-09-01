@@ -216,6 +216,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     @IBOutlet private var notifyOnChangeRequests: NSButton!
     @IBOutlet private var notifyOnAcceptances: NSButton!
     @IBOutlet private var notifyOnReviewDismissals: NSButton!
+    @IBOutlet private var notifyOnMyReviewDismissals: NSButton!
     @IBOutlet private var notifyOnReviewAssignments: NSButton!
     @IBOutlet private var notifyOnAllChangeRequests: NSButton!
     @IBOutlet private var notifyOnAllAcceptances: NSButton!
@@ -313,6 +314,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
 
         notifyOnChangeRequests.integerValue = Settings.notifyOnReviewChangeRequests.asInt
         notifyOnReviewDismissals.integerValue = Settings.notifyOnReviewDismissals.asInt
+        notifyOnMyReviewDismissals.integerValue = Settings.notifyOnMyReviewDismissals.asInt
         notifyOnAcceptances.integerValue = Settings.notifyOnReviewAcceptances.asInt
         notifyOnAllChangeRequests.integerValue = Settings.notifyOnAllReviewChangeRequests.asInt
         notifyOnAllReviewDismissals.integerValue = Settings.notifyOnAllReviewDismissals.asInt
@@ -433,6 +435,12 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
 
     @IBAction private func notifyOnAllReviewDismissalsSelected(_ sender: NSButton) {
         Settings.notifyOnAllReviewDismissals = sender.integerValue == 1
+    }
+
+    @IBAction private func notifyOnMyReviewDismissalsSelected(_ sender: NSButton) {
+        let previousShouldSync = Settings.cache.requiresReviewApis
+        Settings.notifyOnMyReviewDismissals = sender.integerValue == 1
+        showOptionalReviewWarning(previousSync: previousShouldSync)
     }
 
     private func showOptionalReviewAssignmentWarning(previousSync: Bool) {
@@ -686,6 +694,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
         notifyOnAllAcceptances.toolTip = Settings.notifyOnAllReviewAcceptancesHelp
         notifyOnReviewDismissals.toolTip = Settings.notifyOnReviewDismissalsHelp
         notifyOnAllReviewDismissals.toolTip = Settings.notifyOnAllReviewDismissalsHelp
+        notifyOnMyReviewDismissals.toolTip = Settings.notifyOnMyReviewDismissalsHelp
         notifyOnReviewAssignments.toolTip = Settings.notifyOnReviewAssignmentsHelp
         assignedDirectReviewHandlingPolicy.toolTip = Settings.assignedDirectReviewHandlingPolicyHelp
         assignedTeamReviewHandlingPolicy.toolTip = Settings.assignedTeamReviewHandlingPolicyHelp
