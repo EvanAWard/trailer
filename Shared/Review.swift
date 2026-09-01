@@ -113,21 +113,25 @@ final class Review: DataItem {
     }
 
     func processNotifications(settings: Settings.Cache) {
-        guard !isMine, pullRequest.canBadge(settings: settings), let newState = State(rawValue: state.orEmpty) else {
+        guard pullRequest.canBadge(settings: settings), let newState = State(rawValue: state.orEmpty) else {
             return
         }
 
         switch newState {
         case .CHANGES_REQUESTED:
-            if settings.notifyOnAllReviewChangeRequests || (settings.notifyOnReviewChangeRequests && pullRequest.createdByMe) {
+            if !isMine, settings.notifyOnAllReviewChangeRequests || (settings.notifyOnReviewChangeRequests && pullRequest.createdByMe) {
                 NotificationQueue.add(type: .changesRequested, for: self)
             }
         case .APPROVED:
-            if settings.notifyOnAllReviewAcceptances || (settings.notifyOnReviewAcceptances && pullRequest.createdByMe) {
+            if !isMine, settings.notifyOnAllReviewAcceptances || (settings.notifyOnReviewAcceptances && pullRequest.createdByMe) {
                 NotificationQueue.add(type: .changesApproved, for: self)
             }
         case .DISMISSED:
-            if settings.notifyOnAllReviewDismissals || (settings.notifyOnReviewDismissals && pullRequest.createdByMe) {
+            // A review holds its author, not whoever dismissed it, so a dismissal I make myself notifies too.
+            let notify = isMine
+                ? settings.notifyOnMyReviewDismissals
+                : (settings.notifyOnAllReviewDismissals || (settings.notifyOnReviewDismissals && pullRequest.createdByMe))
+            if notify {
                 NotificationQueue.add(type: .changesDismissed, for: self)
             }
         }
