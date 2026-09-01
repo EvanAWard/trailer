@@ -37,8 +37,10 @@ final class PullRequest: ListableItem {
     @NSManaged var headLabel: String?
     @NSManaged var baseLabel: String?
     @NSManaged var assignedReviewStatus: Int
-    /** The login of whoever last asked me, or one of my teams, for a review on this pull request. */
-    @NSManaged var reviewRequesterName: String?
+    /** The login of whoever last asked me in person for a review on this pull request. */
+    @NSManaged var personalReviewRequesterName: String?
+    /** The login of whoever last asked one of my teams for a review on this pull request. */
+    @NSManaged var teamReviewRequesterName: String?
     /** When the review events of this pull request were last asked for. The next query reads from here. */
     @NSManaged var lastReviewEventScan: Date?
     @NSManaged var changedFilePaths: String?
@@ -282,9 +284,14 @@ final class PullRequest: ListableItem {
         snoozeUntil != nil && shouldWakeOnComment && hasNewCommits
     }
 
-    /** Whether I asked for the review on this pull request. A request with no recorded actor counts as somebody else's act. */
-    var reviewRequestedByMe: Bool {
-        apiServer.isMe(reviewRequesterName)
+    /** Whether I asked for my own review here. A request with no recorded actor counts as somebody else's act. */
+    var personalReviewRequestedByMe: Bool {
+        apiServer.isMe(personalReviewRequesterName)
+    }
+
+    /** Whether I asked for my team's review here. A request with no recorded actor counts as somebody else's act. */
+    var teamReviewRequestedByMe: Bool {
+        apiServer.isMe(teamReviewRequesterName)
     }
 
     private func setAssignedReviewStatus(to status: AssignmentStatus, settings: Settings.Cache) {
@@ -294,7 +301,7 @@ final class PullRequest: ListableItem {
 
         assignedReviewStatus = status.rawValue
 
-        guard settings.notifyOnReviewAssignments, !createdByMe, !reviewRequestedByMe else {
+        guard settings.notifyOnReviewAssignments, !createdByMe else {
             return
         }
 
@@ -302,9 +309,13 @@ final class PullRequest: ListableItem {
         case .none, .others:
             break
         case .me:
-            NotificationQueue.add(type: .assignedForReview, for: self)
+            if !personalReviewRequestedByMe {
+                NotificationQueue.add(type: .assignedForReview, for: self)
+            }
         case .myTeam:
-            NotificationQueue.add(type: .assignedToTeamForReview, for: self)
+            if !teamReviewRequestedByMe {
+                NotificationQueue.add(type: .assignedToTeamForReview, for: self)
+            }
         }
     }
 
@@ -312,19 +323,22 @@ final class PullRequest: ListableItem {
         reviewers = reviewerNames.joined(separator: ",")
         teamReviewers = reviewerTeams.joined(separator: ",")
 
-        let status: AssignmentStatus = if reviewerNames.contains(apiServer.userName.orEmpty) {
+        let namesMe = reviewerNames.contains { apiServer.isMe($0) }
+        let namesMyTeam = !reviewerTeams.isEmpty && !reviewerTeams.isDisjoint(with: apiServer.myTeamSlugs)
+
+        let status: AssignmentStatus = if namesMe {
             .me
         } else if reviewerTeams.isEmpty {
             .none
-        } else if apiServer.myTeamSlugs.contains(where: { reviewerTeams.contains($0) }) {
+        } else if namesMyTeam {
             .myTeam
         } else {
             .others
         }
 
-        if status == .none || status == .others {
-            reviewRequesterName = nil
-        }
+        // a requester login stays while its own kind of request stands, so one kind never discards the other
+        if !namesMe { personalReviewRequesterName = nil }
+        if !namesMyTeam { teamReviewRequesterName = nil }
         setAssignedReviewStatus(to: status, settings: settings)
     }
 
