@@ -153,7 +153,10 @@ final class Review: DataItem {
                 NotificationQueue.add(type: .changesApproved, for: self)
             }
         case .DISMISSED:
-            // A review holds its author, not whoever dismissed it, so a dismissal I make myself notifies too.
+            // a review holds its author, not whoever dismissed it, so the dismisser is recorded separately
+            if dismissedByMe {
+                return
+            }
             if isMine {
                 if settings.notifyOnMyReviewDismissals {
                     NotificationQueue.add(type: .myReviewDismissed, for: self)
@@ -183,6 +186,11 @@ final class Review: DataItem {
 
     var isMine: Bool {
         username == apiServer.userName
+    }
+
+    /** Whether I dismissed this review. A review with no recorded dismisser counts as somebody else's act. */
+    var dismissedByMe: Bool {
+        apiServer.isMe(dismisserName)
     }
 
     var affectsBottomLine: Bool {
