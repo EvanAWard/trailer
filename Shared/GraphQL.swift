@@ -1143,6 +1143,8 @@ enum GraphQL {
                       let pr = PullRequest.asParent(with: parentId, in: scannerMoc, parentCache: parentCache) else {
                     continue
                 }
+                // `timelineItems` arrives oldest first (unlike the v3 issue-events scan), so the last
+                // write here is the newest event, and is the one that should be kept.
                 pr.reviewRequesterName = actor
             }
         }

@@ -31,6 +31,7 @@ final class ReviewRequestCollector {
 }
 
 final class Review: DataItem {
+    @NSManaged var serverId: Int
     @NSManaged var body: String?
     @NSManaged var username: String?
     @NSManaged var state: String?
@@ -157,6 +158,17 @@ final class Review: DataItem {
                 NotificationQueue.add(type: .changesDismissed, for: self)
             }
         }
+    }
+
+    static func reviews(with ids: [Int], in moc: NSManagedObjectContext) -> [Review] {
+        if ids.isEmpty {
+            return []
+        }
+        let f = NSFetchRequest<Review>(entityName: "Review")
+        f.returnsObjectsAsFaults = false
+        f.includesSubentities = false
+        f.predicate = NSPredicate(format: "serverId IN %@", ids)
+        return try! moc.fetch(f)
     }
 
     static func review(with id: Int, in moc: NSManagedObjectContext) -> Review? {
