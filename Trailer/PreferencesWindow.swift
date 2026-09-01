@@ -695,7 +695,6 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
         pathFilterMovePolicy.toolTip = Settings.pathFilterMovePolicyHelp
         notifyOnAllChangeRequests.toolTip = Settings.notifyOnAllReviewChangeRequestsHelp
         notifyOnChangeRequests.toolTip = Settings.notifyOnReviewChangeRequestsHelp
-        notifyOnAllAcceptances.toolTip = Settings.notifyOnAllReviewChangeRequestsHelp
         notifyOnAcceptances.toolTip = Settings.notifyOnReviewAcceptancesHelp
         notifyOnAllAcceptances.toolTip = Settings.notifyOnAllReviewAcceptancesHelp
         notifyOnReviewDismissals.toolTip = Settings.notifyOnReviewDismissalsHelp
