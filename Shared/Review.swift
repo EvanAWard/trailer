@@ -115,6 +115,10 @@ final class Review: DataItem {
         let parentId = withParent.objectID
         let apiServerId = withParent.apiServer.objectID
         await v3items(with: data, type: Review.self, serverId: apiServerId, moc: moc) { item, info, isNewOrUpdated, syncMoc in
+            // checked every time, so that a row which predates this also gets the id
+            if let serverId = info.potentialInt(named: "id"), item.serverId != serverId {
+                item.serverId = serverId
+            }
             if isNewOrUpdated, let parent = try? syncMoc.existingObject(with: parentId) as? PullRequest {
                 item.pullRequest = parent
                 item.body = info.potentialString(named: "body")
@@ -160,24 +164,21 @@ final class Review: DataItem {
         }
     }
 
-    static func reviews(with ids: [Int], in moc: NSManagedObjectContext) -> [Review] {
+    /** A REST review id is unique to its server only, so the server is part of the match. */
+    static func reviews(with ids: [Int], on apiServerId: NSManagedObjectID, in moc: NSManagedObjectContext) -> [Review] {
         if ids.isEmpty {
             return []
         }
-        let f = NSFetchRequest<Review>(entityName: "Review")
+        let f = NSFetchRequest<Review>(entityName: typeName)
         f.returnsObjectsAsFaults = false
         f.includesSubentities = false
-        f.predicate = NSPredicate(format: "serverId IN %@", ids)
+        f.predicate = NSPredicate(format: "serverId IN %@ and apiServer == %@", ids, apiServerId)
         return try! moc.fetch(f)
     }
 
-    static func review(with id: Int, in moc: NSManagedObjectContext) -> Review? {
-        let f = NSFetchRequest<Review>(entityName: "Review")
-        f.returnsObjectsAsFaults = false
-        f.includesSubentities = false
-        f.fetchLimit = 1
-        f.predicate = NSPredicate(format: "serverId == %d", id)
-        return try! moc.fetch(f).first
+    /** A REST review id is unique to its server only, so the server is part of the match. */
+    static func review(with id: Int, on apiServerId: NSManagedObjectID, in moc: NSManagedObjectContext) -> Review? {
+        reviews(with: [id], on: apiServerId, in: moc).first
     }
 
     var isMine: Bool {
