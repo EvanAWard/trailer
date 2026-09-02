@@ -452,7 +452,8 @@ enum GraphQL {
             timelineItemTypes.append("REVIEW_REQUESTED_EVENT")
         }
 
-        try await process(name: steps.toString, items: items, parentType: T.self, maxCost: profile.itemAccompanyingBatchCount, settings: settings) {
+        try await process(name: steps.toString, items: items, parentType: T.self,
+                          maxCost: profile.itemAccompanyingBatchCount, settings: settings) {
             Fragment(on: typeName) {
                 Field.id
 
@@ -594,7 +595,9 @@ enum GraphQL {
         }
     }
 
-    private static func process(name: String, items: [DataItem], parentType: (some ListableItem).Type? = nil, maxCost: Int, settings: Settings.Cache, @ElementsBuilder fields: () -> [any Element]) async throws {
+    private static func process(name: String, items: [DataItem], parentType: (some ListableItem).Type? = nil,
+                                maxCost: Int, settings: Settings.Cache,
+                                @ElementsBuilder fields: () -> [any Element]) async throws {
         if items.isEmpty {
             return
         }
@@ -619,7 +622,7 @@ enum GraphQL {
                 try await server.run(queries: queries)
                 await scanner.done()
             } catch {
-                await scanner.done(storingFilePaths: false)
+                await scanner.done(applyingCollectedData: false)
                 server.lastSyncSucceeded = false
                 throw error
             }
@@ -1038,6 +1041,7 @@ enum GraphQL {
         private nonisolated(unsafe) let parentCache = FetchCache()
         private nonisolated(unsafe) var nodes = [String: Lista<Node>]()
         private nonisolated(unsafe) let filePathCollector = FilePathCollector()
+        private nonisolated(unsafe) let reviewRequestCollector = ReviewRequestCollector()
         private nonisolated(unsafe) var collectedDismissers = [String: String]()
 
         init(server: ApiServer, parentType: (some DataItem).Type?, settings: Settings.Cache) {
@@ -1071,7 +1075,11 @@ enum GraphQL {
             }
         }
 
-        func done(storingFilePaths: Bool = true) async {
+        /**
+         Applies what the whole scan collected, which a pass that failed must not do, because the data
+         it holds is then incomplete and would replace a correct stored value.
+         */
+        func done(applyingCollectedData: Bool = true) async {
             await withCheckedContinuation { continuation in
                 scannerMoc.perform { [weak self] in
                     guard let self else {
@@ -1079,13 +1087,21 @@ enum GraphQL {
                         return
                     }
                     flush()
-                    if storingFilePaths {
+                    if applyingCollectedData {
                         applyPendingReviewDismissers()
+                        applyPendingReviewRequests()
                         storePendingFilePaths()
+                        if scannerMoc.hasChanges {
+                            try? scannerMoc.save()
+                        }
                     }
                     continuation.resume()
                 }
             }
+        }
+
+        private func applyPendingReviewRequests() {
+            Review.applyRequests(from: reviewRequestCollector, settings: scannerSettings)
         }
 
         /** Writes the dismisser of each collected event whose review row exists. */
@@ -1098,9 +1114,6 @@ enum GraphQL {
         private func storePendingFilePaths() {
             for (pr, paths) in filePathCollector.paths {
                 pr.changedFilePaths = PathFilter.encode(paths)
-            }
-            if scannerMoc.hasChanges {
-                try? scannerMoc.save()
             }
         }
 
@@ -1153,7 +1166,7 @@ enum GraphQL {
                 Issue.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache)
             }
             if let nodeList = nodes["PullRequest"] {
-                PullRequest.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache, filePaths: filePathCollector)
+                PullRequest.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache, filePaths: filePathCollector, reviewRequests: reviewRequestCollector)
             }
             if let nodeList = nodes["Label"] {
                 PRLabel.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache)
@@ -1174,7 +1187,7 @@ enum GraphQL {
                 storeReviewRequesters(from: nodeList)
             }
             if let nodeList = nodes["ReviewRequest"] {
-                Review.syncRequests(from: nodeList, moc: scannerMoc, parentCache: parentCache, settings: scannerSettings)
+                Review.collectRequests(from: nodeList, into: reviewRequestCollector, moc: scannerMoc, parentCache: parentCache)
             }
             if let nodeList = nodes["PullRequestReview"] {
                 Review.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache)
