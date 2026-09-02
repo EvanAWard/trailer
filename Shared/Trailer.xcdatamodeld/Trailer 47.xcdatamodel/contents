@@ -306,6 +306,9 @@
         <relationship name="apiServer" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ApiServer" inverseName="reviews" inverseEntity="ApiServer"/>
         <relationship name="comments" toMany="YES" deletionRule="Nullify" destinationEntity="PRComment" inverseName="review" inverseEntity="PRComment"/>
         <relationship name="pullRequest" maxCount="1" deletionRule="Nullify" destinationEntity="PullRequest" inverseName="reviews" inverseEntity="PullRequest"/>
+        <fetchIndex name="byServerIdIndex">
+            <fetchIndexElement property="serverId" type="Binary" order="ascending"/>
+        </fetchIndex>
         <fetchIndex name="byNodeId">
             <fetchIndexElement property="nodeId" type="Binary" order="ascending"/>
         </fetchIndex>

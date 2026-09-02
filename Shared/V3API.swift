@@ -11,13 +11,15 @@ import TrailerJson
  */
 @MainActor
 final class ReviewActorCollector {
-    private(set) var dismissers = [Int: String]()
+    /** The dismisser of each review, keyed by server, because a review id is unique to its server only. */
+    private(set) var dismissers = [NSManagedObjectID: [Int: String]]()
     private var requestedPullRequests = Set<NSManagedObjectID>()
 
     /** Keeps the first login offered for a review. */
-    func addDismisser(_ login: String, forReview reviewId: Int) {
-        if dismissers[reviewId] == nil {
-            dismissers[reviewId] = login
+    func addDismisser(_ login: String, forReview reviewId: Int, on server: ApiServer) {
+        let serverId = server.objectID
+        if dismissers[serverId]?[reviewId] == nil {
+            dismissers[serverId, default: [:]][reviewId] = login
         }
     }
 
@@ -111,7 +113,7 @@ extension API {
                       let actor = event.potentialObject(named: "actor")?.potentialString(named: "login") else {
                     return
                 }
-                collector.addDismisser(actor, forReview: reviewId)
+                collector.addDismisser(actor, forReview: reviewId, on: apiServer)
 
             case "review_requested":
                 guard collectRequesters,
@@ -303,9 +305,12 @@ extension API {
             }
 
             // v3 reviews are keyed on serverId, so the rows may not exist until the review fetch above has run
-            let dismissers = reviewActors.dismissers
-            for review in Review.reviews(with: Array(dismissers.keys), in: moc) {
-                review.dismisserName = dismissers[review.serverId]
+            for (apiServerId, dismissers) in reviewActors.dismissers {
+                for review in Review.reviews(with: Array(dismissers.keys), on: apiServerId, in: moc) {
+                    if let name = dismissers[review.serverId] {
+                        review.dismisserName = name
+                    }
+                }
             }
 
             if Settings.notifyOnCommentReactions {
