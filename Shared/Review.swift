@@ -70,10 +70,11 @@ final class Review: DataItem {
     }
 
     /** Applies the collected requests, which must hold every page, one time for each pull request. */
-    static func applyRequests(from collector: ReviewRequestCollector, settings: Settings.Cache) {
+    static func applyRequests(from collector: ReviewRequestCollector, myTeamSlugs: Set<String>, settings: Settings.Cache) {
         for pr in collector.pullRequests {
             pr.checkAndStoreReviewAssignments(collector.userLogins[pr] ?? [],
                                               collector.teamSlugs[pr] ?? [],
+                                              myTeamSlugs: myTeamSlugs,
                                               settings: settings)
         }
     }

@@ -319,12 +319,12 @@ final class PullRequest: ListableItem {
         }
     }
 
-    func checkAndStoreReviewAssignments(_ reviewerNames: Set<String>, _ reviewerTeams: Set<String>, settings: Settings.Cache) {
+    func checkAndStoreReviewAssignments(_ reviewerNames: Set<String>, _ reviewerTeams: Set<String>, myTeamSlugs: Set<String>, settings: Settings.Cache) {
         reviewers = reviewerNames.joined(separator: ",")
         teamReviewers = reviewerTeams.joined(separator: ",")
 
         let namesMe = reviewerNames.contains { apiServer.isMe($0) }
-        let namesMyTeam = !reviewerTeams.isEmpty && !reviewerTeams.isDisjoint(with: apiServer.myTeamSlugs)
+        let namesMyTeam = !reviewerTeams.isEmpty && !reviewerTeams.isDisjoint(with: myTeamSlugs)
 
         let status: AssignmentStatus = if namesMe {
             .me
