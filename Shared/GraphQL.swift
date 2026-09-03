@@ -1106,7 +1106,7 @@ enum GraphQL {
         }
 
         private func applyPendingReviewRequests() {
-            Review.applyRequests(from: reviewRequestCollector, settings: scannerSettings)
+            Review.applyRequests(from: reviewRequestCollector, myTeamSlugs: scannerServer.myTeamSlugs, settings: scannerSettings)
         }
 
         /** Writes the dismisser of each collected event whose review row exists. */

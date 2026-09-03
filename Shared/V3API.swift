@@ -586,7 +586,7 @@ extension API {
                         for userName in userList.compactMap({ $0.potentialString(named: "login") }) {
                             reviewUsers.insert(userName)
                         }
-                        p.checkAndStoreReviewAssignments(reviewUsers, reviewTeams, settings: settings)
+                        p.checkAndStoreReviewAssignments(reviewUsers, reviewTeams, myTeamSlugs: p.apiServer.myTeamSlugs, settings: settings)
 
                     } else if let data, let userList = data.potentialArray(named: "users"), let teamList = data.potentialArray(named: "teams") {
                         // New API results
@@ -596,7 +596,7 @@ extension API {
                         for teamName in teamList.compactMap({ $0.potentialString(named: "slug") }) {
                             reviewTeams.insert(teamName)
                         }
-                        p.checkAndStoreReviewAssignments(reviewUsers, reviewTeams, settings: settings)
+                        p.checkAndStoreReviewAssignments(reviewUsers, reviewTeams, myTeamSlugs: p.apiServer.myTeamSlugs, settings: settings)
 
                     } else {
                         p.apiServer.lastSyncSucceeded = false
