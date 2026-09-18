@@ -245,16 +245,19 @@ final class PullRequest: ListableItem {
         return nil
     }
 
-    override func preferredSectionBasedOnChangedPaths(settings: Settings.Cache) -> Section? {
+    override func matchesPathFilter(settings: Settings.Cache) -> Bool {
         // no stored value means that no sync ever fetched the paths, and only the v4 sync fetches them
         guard settings.useV4API,
-              let section = settings.pathFilterMovePolicy,
               repo.syncFilePaths,
               condition == ItemCondition.open.rawValue,
-              let stored = changedFilePaths,
-              PathFilter.matchesAny(changedPaths: PathFilter.decode(stored),
-                                    patterns: settings.pathFilterPatterns)
-        else { return nil }
+              let stored = changedFilePaths
+        else { return false }
+        return PathFilter.matchesAny(changedPaths: PathFilter.decode(stored),
+                                     patterns: settings.pathFilterPatterns)
+    }
+
+    override func preferredSectionBasedOnChangedPaths(settings: Settings.Cache) -> Section? {
+        guard let section = settings.pathFilterMovePolicy, matchesPathFilter(settings: settings) else { return nil }
         return section
     }
 
