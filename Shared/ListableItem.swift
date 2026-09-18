@@ -468,6 +468,18 @@ class ListableItem: DataItem, Listable {
         nil
     }
 
+    /**
+     Reports whether the changed file paths of this item match one of the path patterns. Only a pull
+     request has changed files, so the default is false.
+     */
+    func matchesPathFilter(settings _: Settings.Cache) -> Bool {
+        false
+    }
+
+    private func pathFilterOverridesRepoDisplayPolicy(settings: Settings.Cache) -> Bool {
+        settings.pathFilterOverridesRepoPolicy && matchesPathFilter(settings: settings)
+    }
+
     private func highestPreferredSection(takingItemConditionIntoAccount: Bool, settings: Settings.Cache) -> Section {
         if takingItemConditionIntoAccount {
             if condition == ItemCondition.merged.rawValue {
@@ -555,17 +567,17 @@ class ListableItem: DataItem, Listable {
         repo.displayPolicyForIssues
     }
 
-    private func shouldHideBecauseOfRepoDisplayPolicy(targetSection: Section) -> Section.HidingCause? {
+    private func shouldHideBecauseOfRepoDisplayPolicy(targetSection: Section, settings: Settings.Cache) -> Section.HidingCause? {
         switch repoDisplayPolicy {
         case RepoDisplayPolicy.hide.rawValue:
             return .repoHideAllItems
         case RepoDisplayPolicy.mine.rawValue:
             if targetSection == .all || targetSection == .participated || targetSection == .mentioned {
-                return .repoShowMineOnly
+                return pathFilterOverridesRepoDisplayPolicy(settings: settings) ? nil : .repoShowMineOnly
             }
         case RepoDisplayPolicy.mineAndPaticipated.rawValue:
             if targetSection == .all {
-                return .repoShowMineAndParticipated
+                return pathFilterOverridesRepoDisplayPolicy(settings: settings) ? nil : .repoShowMineAndParticipated
             }
         default:
             break
@@ -651,7 +663,7 @@ class ListableItem: DataItem, Listable {
             targetSection = highestPreferredSection(takingItemConditionIntoAccount: true, settings: settings)
 
             if targetSection.visible, let cause
-                = shouldHideBecauseOfRepoDisplayPolicy(targetSection: targetSection)
+                = shouldHideBecauseOfRepoDisplayPolicy(targetSection: targetSection, settings: settings)
                 ?? shouldHideBecauseOfRedStatuses(in: targetSection, settings: settings) {
                 targetSection = .hidden(cause: cause)
             }

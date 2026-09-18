@@ -105,6 +105,7 @@ enum Settings {
         let newItemInOwnedRepoMovePolicy = Settings.newItemInOwnedRepoMovePolicy.preferredSection
         let pathFilterPatterns = PathFilter.patterns(from: Settings.pathFilterList)
         let pathFilterMovePolicy = Settings.pathFilterMovePolicy.preferredSection
+        let pathFilterOverridesRepoPolicy = Settings.pathFilterOverridesRepoPolicy
         let repoHidingPolicies = Settings.repoHidingPolicies
         let useV4API = Settings.useV4API
         let assignedItemDirectHandlingPolicy = Settings.assignedItemDirectHandlingPolicy
@@ -181,7 +182,7 @@ enum Settings {
 
             shouldSyncReactions = notifyOnItemReactions || notifyOnCommentReactions
 
-            shouldSyncFilePaths = !pathFilterPatterns.isEmpty && pathFilterMovePolicy != nil
+            shouldSyncFilePaths = !pathFilterPatterns.isEmpty && (pathFilterMovePolicy != nil || pathFilterOverridesRepoPolicy)
 
             let anyDismissalNotifications = notifyOnReviewDismissals
                 || notifyOnAllReviewDismissals
@@ -232,7 +233,7 @@ enum Settings {
             "AUTO_SNOOZE_DAYS", "HIDE_MENUBAR_COUNTS", "AUTO_ADD_NEW_REPOS", "AUTO_REMOVE_DELETED_REPOS", "MARK_PRS_AS_UNREAD_ON_NEW_COMMITS", "SHOW_LABELS", "DISPLAY_REVIEW_CHANGE_REQUESTS", "SHOW_RELATIVE_DATES", "QUERY_AUTHORED_PRS", "QUERY_AUTHORED_ISSUES",
             "DISPLAY_MILESTONES", "DEFAULT_APP_FOR_OPENING_WEB", "DEFAULT_APP_FOR_OPENING_ITEMS", "HIDE_ARCHIVED_REPOS", "DRAFT_HANDLING_POLICY", "MARK_UNMERGEABLE_ITEMS", "SHOW_PR_LINES", "SCAN_CLOSED_AND_MERGED", "USE_V4_API", "REQUESTED_TEAM_REVIEWS",
             "SHOW_STATUSES_GREEN", "SHOW_STATUSES_GRAY", "SHOW_STATUSES_YELLOW", "SHOW_STATUSES_RED", "SHOW_BASE_AND_HEAD_BRANCHES", "PERSISTED_TAB_FILTERS", "PR_V4_SYNC_PAGE", "ISSUE_V4_SYNC_PAGE", "V4_THREAD_SYNC", "ASSIGNED_PR_TEAM_HANDLING_POLICY",
-            "ASSIGNED_REVIEW_TEAM_HANDLING_POLICY", "AUTO_REMOVE_MERGED_ITEMS", "AUTO_REMOVE_CLOSED_ITEMS", "LABELS_INCLUSION_RULE", "AUTHORS_INCLUSION_RULE", "COMMENTER_INCLUSION_RULE", "SHOW_CLOSING_INFO", "PATH_FILTER_LIST", "PATH_FILTER_MOVE_POLICY",
+            "ASSIGNED_REVIEW_TEAM_HANDLING_POLICY", "AUTO_REMOVE_MERGED_ITEMS", "AUTO_REMOVE_CLOSED_ITEMS", "LABELS_INCLUSION_RULE", "AUTHORS_INCLUSION_RULE", "COMMENTER_INCLUSION_RULE", "SHOW_CLOSING_INFO", "PATH_FILTER_LIST", "PATH_FILTER_MOVE_POLICY", "PATH_FILTER_OVERRIDES_REPO_POLICY",
             "NOTIFY_ON_CODE_COMMENTS", "NOTIFY_ON_ALL_CODE_COMMENTS", "NOTIFY_ON_COMMENT_REPLIES", "NOTIFY_ON_ALL_COMMENT_REPLIES", "NOTIFY_ON_REPLIES_ON_MY_ITEMS", "NOTIFY_ON_ITEM_COMMENTS", "NOTIFY_ON_ALL_ITEM_COMMENTS",
             "REPO_HIDING_POLICIES", "REPO_HIDING_POLICIES_MIGRATED"
         ] + NotificationType.allCases.map(notificationSoundKey)
@@ -559,6 +560,10 @@ enum Settings {
     @MovePlacementUserDefault(key: "PATH_FILTER_MOVE_POLICY", defaultValue: .hidden(cause: .unknown))
     static var pathFilterMovePolicy: Section
     static let pathFilterMovePolicyHelp = "Move a pull request to this section when it changes one of the paths listed here, even if you have not participated in it. An item with no unread comments stays hidden while \"Only display items with unread badges\" is on."
+
+    @UserDefault(key: "PATH_FILTER_OVERRIDES_REPO_POLICY", defaultValue: false)
+    static var pathFilterOverridesRepoPolicy: Bool
+    static let pathFilterOverridesRepoPolicyHelp = "Show a pull request which changes one of the paths listed here, even when the repository display policy is \"Mine\" or \"Mine and Participated\". A repository set to \"Hide\" stays hidden, because it syncs no items. The paths are read during a sync, so this applies after the next sync."
 
     /////////////////////////// STRINGS
 
