@@ -256,11 +256,6 @@ final class PullRequest: ListableItem {
                                      patterns: settings.pathFilterPatterns)
     }
 
-    override func preferredSectionBasedOnChangedPaths(settings: Settings.Cache) -> Section? {
-        guard let section = settings.pathFilterMovePolicy, matchesPathFilter(settings: settings) else { return nil }
-        return section
-    }
-
     override func shouldHideBecauseOfRepoHidingPolicy(settings: Settings.Cache) -> Section.HidingCause? {
         if createdByMe {
             switch repo.hidingPolicy(settings: settings) {
