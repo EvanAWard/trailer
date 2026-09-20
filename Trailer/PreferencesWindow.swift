@@ -526,7 +526,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
             text = "\"Only display items with unread badges\" keeps moved items hidden."
             color = .appRed
         } else if armed, Settings.pathFilterOverridesRepoPolicy, !Settings.showCommentsEverywhere {
-            text = "A shown item badges only while \"Badge & send notifications for items in every section\" is on."
+            text = "An item shown in the All section badges only while \"Badge & send notifications for items in every section\" is on."
             color = .secondaryLabelColor
         } else {
             text = "Applies to the repositories with File Paths ticked."
