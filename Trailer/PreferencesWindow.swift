@@ -1334,6 +1334,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     @IBAction private func showAllCommentsSelected(_ sender: NSButton) {
         Settings.showCommentsEverywhere = (sender.integerValue == 1)
         deferredUpdateTimer.push()
+        updatePathFilterNote()
     }
 
     @IBAction private func sortOrderSelected(_ sender: NSButton) {
