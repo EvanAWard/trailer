@@ -858,7 +858,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
         newItemInOwnedRepoMovePolicy.selectItem(at: Settings.newItemInOwnedRepoMovePolicy.movePolicyMenuIndex)
         pathFilterList.objectValue = Settings.pathFilterList
         pathFilterMovePolicy.selectItem(at: Settings.pathFilterMovePolicy.movePolicyMenuIndex)
-        pathFilterOverridesRepoPolicy.integerValue = Settings.pathFilterOverridesRepoPolicy ? 1 : 0
+        pathFilterOverridesRepoPolicy.integerValue = Settings.pathFilterOverridesRepoPolicy.asInt
         refreshAnyRepoSyncsFilePaths()
         updatePathFilterNote()
 
