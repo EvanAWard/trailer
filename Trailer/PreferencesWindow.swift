@@ -1013,27 +1013,9 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     }
 
     @IBAction private func pathFilterOverridesRepoPolicySelected(_ sender: NSButton) {
-        let on = sender.integerValue == 1
-        Settings.pathFilterOverridesRepoPolicy = on
-        if on {
-            markNewlyShownItemsAsAnnounced()
-        }
+        Settings.pathFilterOverridesRepoPolicy = sender.integerValue == 1
         deferredUpdateTimer.push()
         updatePathFilterNote()
-    }
-
-    /**
-     Marks the pull requests which this setting makes visible as already announced, so that the next sync
-     does not send a "new pull request" notification for each one. An item which was visible before keeps
-     its pending notification.
-     */
-    private func markNewlyShownItemsAsAnnounced() {
-        let settings = Settings.refreshCache()
-        for pr in PullRequest.allItems(in: DataManager.main) where !pr.announced && !pr.isVisibleOnMenu {
-            if pr.postProcess(settings: settings).visible {
-                pr.announced = true
-            }
-        }
     }
 
     @IBAction private func dontConfirmRemoveAllMergedSelected(_ sender: NSButton) {
