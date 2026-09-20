@@ -461,14 +461,6 @@ class ListableItem: DataItem, Listable {
     }
 
     /**
-     Reports which section the changed file paths of this item prefer. Only a pull request has changed
-     files, so the default is nil.
-     */
-    func preferredSectionBasedOnChangedPaths(settings _: Settings.Cache) -> Section? {
-        nil
-    }
-
-    /**
      Reports whether the changed file paths of this item match one of the path patterns. Only a pull
      request has changed files, so the default is false.
      */
@@ -533,8 +525,9 @@ class ListableItem: DataItem, Listable {
             targetSection = potentialSection
         }
 
-        if let potentialSection = preferredSectionBasedOnChangedPaths(settings: settings),
-           potentialSection.sectionIndex < targetSection.sectionIndex {
+        if let potentialSection = settings.pathFilterMovePolicy,
+           potentialSection.sectionIndex < targetSection.sectionIndex,
+           matchesPathFilter(settings: settings) {
             targetSection = potentialSection
         }
 
