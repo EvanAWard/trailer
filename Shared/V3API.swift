@@ -315,7 +315,7 @@ extension API {
                         let apiServer = p.apiServer
                         group.addTask { @MainActor in
                             let result = await RestAccess.getPagedData(at: link, from: apiServer) { data, _ in
-                                await PRComment.syncComments(from: data, parent: p, moc: moc)
+                                await PRComment.syncComments(from: data, parent: p, moc: moc, isCode: !issues)
                                 return false
                             }
                             switch result {
@@ -356,7 +356,7 @@ extension API {
 
                     group.addTask { @MainActor in
                         let result = await RestAccess.getPagedData(at: link, from: apiServer) { data, _ in
-                            await PRComment.syncComments(from: data, parent: i, moc: moc)
+                            await PRComment.syncComments(from: data, parent: i, moc: moc, isCode: false)
                             return false
                         }
                         switch result {

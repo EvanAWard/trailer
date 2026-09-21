@@ -280,17 +280,17 @@ final class PullRequest: ListableItem {
 
         assignedReviewStatus = status.rawValue
 
+        guard Settings.notifyOnReviewAssignments, !createdByMe else {
+            return
+        }
+
         switch status {
         case .none, .others:
             break
         case .me:
-            if Settings.notifyOnReviewAssignments {
-                NotificationQueue.add(type: .assignedForReview, for: self)
-            }
+            NotificationQueue.add(type: .assignedForReview, for: self)
         case .myTeam:
-            if Settings.notifyOnReviewAssignments {
-                NotificationQueue.add(type: .assignedToTeamForReview, for: self)
-            }
+            NotificationQueue.add(type: .assignedToTeamForReview, for: self)
         }
     }
 

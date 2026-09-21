@@ -12,6 +12,8 @@ final class PRComment: DataItem {
     @NSManaged var webUrl: String?
     @NSManaged var reactionsUrl: String?
     @NSManaged var pendingReactionScan: Bool
+    @NSManaged var isCodeComment: Bool
+    @NSManaged var replyToNodeId: String?
 
     @NSManaged var pullRequest: PullRequest?
     @NSManaged var issue: Issue?
@@ -50,6 +52,8 @@ final class PRComment: DataItem {
             let info = node.jsonPayload
             comment.body = info.potentialString(named: "body")
             comment.webUrl = info.potentialString(named: "url")
+            comment.isCodeComment = node.elementType == "PullRequestReviewComment"
+            comment.replyToNodeId = info.potentialObject(named: "replyTo")?.potentialString(named: "replyToNodeId")
 
             if let userInfo = info.potentialObject(named: "author") {
                 comment.userName = userInfo.potentialString(named: "login")
@@ -59,12 +63,13 @@ final class PRComment: DataItem {
         }
     }
 
-    static func syncComments(from data: [TypedJson.Entry]?, parent: ListableItem, moc: NSManagedObjectContext) async {
+    static func syncComments(from data: [TypedJson.Entry]?, parent: ListableItem, moc: NSManagedObjectContext, isCode: Bool) async {
         let parentId = parent.objectID
         await v3items(with: data, type: PRComment.self, serverId: parent.apiServer.objectID, moc: moc) { item, info, newOrUpdated, syncMoc in
             if newOrUpdated, let parent = try? syncMoc.existingObject(with: parentId) as? ListableItem {
                 item.pullRequest = parent.asPr
                 item.issue = parent.asIssue
+                item.isCodeComment = isCode
                 item.fill(from: info)
                 item.fastForwardIfNeeded(parent: parent)
                 item.reactionsUrl = info.potentialObject(named: "reactions")?.potentialString(named: "url")
@@ -113,11 +118,64 @@ final class PRComment: DataItem {
             parent.wakeUp(settings: settings)
         }
 
-        if Settings.disableAllCommentNotifications {
+        if settings.disableAllCommentNotifications {
+            return
+        }
+
+        guard shouldNotify(settings: settings) else {
+            let commentNodeId = nodeId ?? "<no ID>"
+            let kind = notificationKind
+            Task {
+                await Logging.shared.log("Ignoring \(kind) \(commentNodeId): the comment notification settings exclude it")
+            }
             return
         }
 
         NotificationQueue.add(type: .newComment, for: self)
+    }
+
+    /** True when the comment sits in a review thread rather than starting one. Only the v4 path can tell. */
+    private var isReply: Bool {
+        replyToNodeId != nil
+    }
+
+    /** The group of settings which decides this comment, named for the log. Read in the same order as `shouldNotify`. */
+    private var notificationKind: String {
+        if isReply {
+            return "reply"
+        }
+        if isCodeComment {
+            return "code comment"
+        }
+        return "item comment"
+    }
+
+    /** True when the comment notification settings ask for a comment of this kind, given who owns the item or who is in the thread. */
+    private func shouldNotify(settings: Settings.Cache) -> Bool {
+        if isReply {
+            return settings.notifyOnAllCommentReplies
+                || (settings.notifyOnRepliesOnMyItems && parent?.createdByMe == true)
+                || (settings.notifyOnCommentReplies && threadHoldsMyComment())
+        }
+        if isCodeComment {
+            return settings.notifyOnAllCodeComments || (settings.notifyOnCodeComments && parent?.createdByMe == true)
+        }
+        return settings.notifyOnAllItemComments || (settings.notifyOnItemComments && parent?.createdByMe == true)
+    }
+
+    /**
+     True when the store holds a comment of mine in the same review thread. GitHub names the first
+     comment of a thread as the reply parent, never the comment somebody answered, so this is the
+     closest reading of "they replied to me" that the API offers.
+     */
+    private func threadHoldsMyComment() -> Bool {
+        guard let replyToNodeId, let moc = managedObjectContext, let me = apiServer.userNodeId else {
+            return false
+        }
+        let f = NSFetchRequest<PRComment>(entityName: "PRComment")
+        f.fetchLimit = 1
+        f.predicate = NSPredicate(format: "userNodeId == %@ and apiServer == %@ and (nodeId == %@ or replyToNodeId == %@)", me, apiServer, replyToNodeId, replyToNodeId)
+        return ((try? moc.count(for: f)) ?? 0) > 0
     }
 
     private func fill(from info: TypedJson.Entry) {
