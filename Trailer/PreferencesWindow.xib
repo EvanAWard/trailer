@@ -1288,6 +1288,17 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                                                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                                 </textFieldCell>
                                                             </textField>
+                                                            <button fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Pth-b0-022">
+                                                                <rect key="frame" x="770" y="44" width="210" height="34"/>
+                                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                                <buttonCell key="cell" type="check" title="Show a match even when the repository policy hides it" bezelStyle="regularSquare" imagePosition="left" alignment="left" lineBreakMode="wordWrap" state="on" inset="2" id="Pth-b0-023">
+                                                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                                                    <font key="font" metaFont="system"/>
+                                                                </buttonCell>
+                                                                <connections>
+                                                                    <action selector="pathFilterOverridesRepoPolicySelected:" target="vQH-WF-vh2" id="Pth-b0-024"/>
+                                                                </connections>
+                                                            </button>
                                                         </subviews>
                                                     </view>
                                                 </box>
@@ -3211,6 +3222,7 @@ in System Preferences -&gt; Security -&gt; Privacy.  Restart Trailer for the per
                 <outlet property="pathFilterList" destination="Pth-b0-005" id="Pth-b0-030"/>
                 <outlet property="pathFilterMovePolicy" destination="Pth-b0-010" id="Pth-b0-031"/>
                 <outlet property="pathFilterNote" destination="Pth-b0-018" id="Pth-b0-032"/>
+                <outlet property="pathFilterOverridesRepoPolicy" destination="Pth-b0-022" id="Pth-b0-033"/>
                 <outlet property="tabs" destination="RGK-bv-JXB" id="B5b-gW-VDa"/>
                 <outlet property="teamMentionMovePolicy" destination="gM2-vc-gT5" id="ZPB-jw-m7v"/>
                 <outlet property="v4ApiSwitch" destination="7V9-LT-Yjg" id="3qv-tI-fGl"/>
