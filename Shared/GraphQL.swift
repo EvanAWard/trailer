@@ -191,12 +191,20 @@ enum GraphQL {
         }
     }
 
+    /** How far back the first sync reads review events, when no earlier sync has set an anchor. */
+    private static let firstSyncReviewEventWindow: TimeInterval = 30 * 24 * 3600
+
     private static let nameWithOwnerField = Field("nameWithOwner")
 
     private static let userFragment = Fragment(on: "User") {
         Field.id
         Field("login")
         Field("avatarUrl")
+    }
+
+    private static let teamFragment = Fragment(on: "Team") {
+        Field.id
+        Field("slug")
     }
 
     private static let mannequinFragment = Fragment(on: "Mannequin") {
@@ -392,6 +400,8 @@ enum GraphQL {
     static func update<T: ListableItem>(for items: [T], steps: API.SyncSteps, settings: Settings.Cache) async throws {
         let typeName = T.typeName
 
+        var reviewEventSince = Date(timeIntervalSinceNow: -firstSyncReviewEventWindow)
+
         if let prs = items as? [PullRequest] {
             if steps.contains(.reviews) {
                 for pr in prs {
@@ -408,6 +418,16 @@ enum GraphQL {
                     for status in pr.statuses {
                         status.postSyncAction = PostSyncAction.delete.rawValue
                     }
+                }
+            }
+
+            if steps.contains(.reviewDismissers) || steps.contains(.reviewRequesters) {
+                // one query serves the whole batch, so the oldest watermark of the batch is the only safe anchor
+                let now = Date()
+                let oldest = prs.map { $0.lastReviewEventScan ?? .distantPast }.min() ?? .distantPast
+                reviewEventSince = max(oldest, reviewEventSince)
+                for pr in prs {
+                    pr.lastReviewEventScan = now
                 }
             }
         }
@@ -431,7 +451,17 @@ enum GraphQL {
         }
 
         let profile = settings.syncProfile
-        try await process(name: steps.toString, items: items, parentType: T.self, maxCost: profile.itemAccompanyingBatchCount) {
+
+        var timelineItemTypes = [String]()
+        if steps.contains(.reviewDismissers) {
+            timelineItemTypes.append("REVIEW_DISMISSED_EVENT")
+        }
+        if steps.contains(.reviewRequesters) {
+            timelineItemTypes.append("REVIEW_REQUESTED_EVENT")
+        }
+
+        try await process(name: steps.toString, items: items, parentType: T.self,
+                          maxCost: profile.itemAccompanyingBatchCount, settings: settings) {
             Fragment(on: typeName) {
                 Field.id
 
@@ -443,10 +473,7 @@ enum GraphQL {
                                 Group("requestedReviewer") {
                                     userFragment
                                     mannequinFragment
-                                    Fragment(on: "Team") {
-                                        Field.id
-                                        Field("slug")
-                                    }
+                                    teamFragment
                                 }
                             }
                         }
@@ -461,6 +488,34 @@ enum GraphQL {
                                 Field("createdAt")
                                 Field("updatedAt")
                                 authorGroup
+                            }
+                        }
+                    }
+
+                    if !timelineItemTypes.isEmpty {
+                        // the window is bounded by time, so no event type can crowd out another, and a long gap
+                        // between syncs is covered by paging instead of being cut short
+                        Group("timelineItems",
+                              ("itemTypes", "[\(timelineItemTypes.joined(separator: ", "))]"),
+                              ("since", Date.Formatters.iso8601.format(reviewEventSince)),
+                              paging: profile.smallPageSize) {
+                            if steps.contains(.reviewDismissers) {
+                                Fragment(on: "ReviewDismissedEvent") {
+                                    Field.id
+                                    Group("actor") { Field("login") }
+                                    // the alias keeps TrailerQL from reading the nested review as a node and syncing it as a blank row
+                                    Group("review") { Field("dismissedReviewNodeId: id") }
+                                }
+                            }
+                            if steps.contains(.reviewRequesters) {
+                                Fragment(on: "ReviewRequestedEvent") {
+                                    Field.id
+                                    Group("actor") { Field("login") }
+                                    Group("requestedReviewer") {
+                                        userFragment
+                                        teamFragment
+                                    }
+                                }
                             }
                         }
                     }
@@ -521,8 +576,9 @@ enum GraphQL {
         }
     }
 
-    static func updateReactions(for comments: [PRComment], profile: Profile) async throws {
-        try await process(name: "Comment Reactions", items: comments, maxCost: profile.itemAccompanyingBatchCount) {
+    static func updateReactions(for comments: [PRComment], settings: Settings.Cache) async throws {
+        let profile = settings.syncProfile
+        try await process(name: "Comment Reactions", items: comments, maxCost: profile.itemAccompanyingBatchCount, settings: settings) {
             Fragment(on: "IssueComment") {
                 Field.id
                 Group("reactions", paging: profile.largePageSize) {
@@ -537,8 +593,9 @@ enum GraphQL {
         }
     }
 
-    static func updateComments(for reviews: [Review], profile: Profile) async throws {
-        try await process(name: "Review Comments", items: reviews, maxCost: profile.itemAccompanyingBatchCount) {
+    static func updateComments(for reviews: [Review], settings: Settings.Cache) async throws {
+        let profile = settings.syncProfile
+        try await process(name: "Review Comments", items: reviews, maxCost: profile.itemAccompanyingBatchCount, settings: settings) {
             Fragment(on: "PullRequestReview") {
                 Field.id
                 commentGroup(for: "PullRequestReviewComment", profile: profile)
@@ -546,7 +603,9 @@ enum GraphQL {
         }
     }
 
-    private static func process(name: String, items: [DataItem], parentType: (some ListableItem).Type? = nil, maxCost: Int, @ElementsBuilder fields: () -> [any Element]) async throws {
+    private static func process(name: String, items: [DataItem], parentType: (some ListableItem).Type? = nil,
+                                maxCost: Int, settings: Settings.Cache,
+                                @ElementsBuilder fields: () -> [any Element]) async throws {
         if items.isEmpty {
             return
         }
@@ -564,14 +623,14 @@ enum GraphQL {
             }
         }
         for (server, ids) in itemIdsByServer {
-            let scanner = NodeScanner(server: server, parentType: parentType)
+            let scanner = NodeScanner(server: server, parentType: parentType, settings: settings)
             let serverName = server.label ?? "<no label>"
             let queries = Query.batching("\(serverName): \(name)", groupName: "nodes", idList: ids, maxCost: maxCost, perNode: { scanner.add(progress: $0) }, fields: fields)
             do {
                 try await server.run(queries: queries)
                 await scanner.done()
             } catch {
-                await scanner.done(storingFilePaths: false)
+                await scanner.done(applyingCollectedData: false)
                 server.lastSyncSucceeded = false
                 throw error
             }
@@ -665,7 +724,7 @@ enum GraphQL {
                         prFragment(includeRepo: true, settings: settings)
                     }
                     group.addTask {
-                        if let nodes = await fetchAllAuthoredItems(from: server, label: "PRs", fields: { g }) {
+                        if let nodes = await fetchAllAuthoredItems(from: server, label: "PRs", settings: settings, fields: { g }) {
                             await checkAuthoredPrClosures(nodes: nodes, in: server, settings: settings)
                         }
                     }
@@ -684,7 +743,7 @@ enum GraphQL {
                         issueFragment(includeRepo: true, settings: settings)
                     }
                     group.addTask {
-                        if let nodes = await fetchAllAuthoredItems(from: server, label: "Issues", fields: { g }) {
+                        if let nodes = await fetchAllAuthoredItems(from: server, label: "Issues", settings: settings, fields: { g }) {
                             await checkAuthoredIssueClosures(nodes: nodes, in: server)
                         }
                     }
@@ -695,9 +754,9 @@ enum GraphQL {
         }
     }
 
-    static func fetchAllAuthoredItems(from server: ApiServer, label: String, @ElementsBuilder fields: () -> [any Element]) async -> Lista<Node>? {
+    static func fetchAllAuthoredItems(from server: ApiServer, label: String, settings: Settings.Cache, @ElementsBuilder fields: () -> [any Element]) async -> Lista<Node>? {
         let group = Group("viewer", fields: fields)
-        let scanner = NodeScanner(server: server, parentType: nil)
+        let scanner = NodeScanner(server: server, parentType: nil, settings: settings)
         do {
             let nodesList = Lista<Node>()
             let authoredItemsQuery = Query(name: "Authored \(label)", rootElement: group) {
@@ -731,7 +790,7 @@ enum GraphQL {
 
         let prGroup = Group("pullRequests") { prFragment(includeRepo: true, settings: settings) }
         let group = BatchGroup(name: "nodes", templateGroup: prGroup, idList: prIdsToCheck)
-        let scanner = NodeScanner(server: server, parentType: nil)
+        let scanner = NodeScanner(server: server, parentType: nil, settings: settings)
         let query = Query(name: "Closed Authored PRs", rootElement: group, allowsEmptyResponse: true) {
             scanner.add(progress: $0.asForcedUpdate())
         }
@@ -804,7 +863,7 @@ enum GraphQL {
 
         let prRepoIdToLatestExistingUpdate = _prRepoIdToLatestExistingUpdate
         for (server, reposInThisServer) in reposByServer {
-            let scanner = NodeScanner(server: server, parentType: nil)
+            let scanner = NodeScanner(server: server, parentType: nil, settings: settings)
 
             let perNodeBlock: Query.PerNodeBlock = { progress throws(TQL.Error) in
                 scanner.add(progress: progress)
@@ -870,7 +929,7 @@ enum GraphQL {
 
         let issueRepoIdToLatestExistingUpdate = _issueRepoIdToLatestExistingUpdate
         for (server, reposInThisServer) in reposByServer {
-            let scanner = NodeScanner(server: server, parentType: nil)
+            let scanner = NodeScanner(server: server, parentType: nil, settings: settings)
 
             let perNodeBlock: Query.PerNodeBlock = { progress throws(TQL.Error) in
                 scanner.add(progress: progress)
@@ -986,15 +1045,19 @@ enum GraphQL {
 
         // protected by scannerMoc
         private nonisolated(unsafe) let scannerServer: ApiServer
+        private nonisolated(unsafe) let scannerSettings: Settings.Cache
         private nonisolated(unsafe) let parentCache = FetchCache()
         private nonisolated(unsafe) var nodes = [String: Lista<Node>]()
         private nonisolated(unsafe) let filePathCollector = FilePathCollector()
+        private nonisolated(unsafe) let reviewRequestCollector = ReviewRequestCollector()
+        private nonisolated(unsafe) var collectedDismissers = [String: String]()
 
-        init(server: ApiServer, parentType: (some DataItem).Type?) {
+        init(server: ApiServer, parentType: (some DataItem).Type?, settings: Settings.Cache) {
             let child = server.managedObjectContext!.buildChildContext()
             scannerMoc = child
             scannerServer = try! child.existingObject(with: server.objectID) as! ApiServer
             self.parentType = parentType
+            scannerSettings = settings
         }
 
         func add(progress: ParseOutput) {
@@ -1017,7 +1080,11 @@ enum GraphQL {
             }
         }
 
-        func done(storingFilePaths: Bool = true) async {
+        /**
+         Applies what the whole scan collected, which a pass that failed must not do, because the data
+         it holds is then incomplete and would replace a correct stored value.
+         */
+        func done(applyingCollectedData: Bool = true) async {
             await withCheckedContinuation { continuation in
                 scannerMoc.perform { [weak self] in
                     guard let self else {
@@ -1025,11 +1092,27 @@ enum GraphQL {
                         return
                     }
                     flush()
-                    if storingFilePaths {
+                    if applyingCollectedData {
+                        applyPendingReviewDismissers()
+                        applyPendingReviewRequests()
                         storePendingFilePaths()
+                        if scannerMoc.hasChanges {
+                            try? scannerMoc.save()
+                        }
                     }
                     continuation.resume()
                 }
+            }
+        }
+
+        private func applyPendingReviewRequests() {
+            Review.applyRequests(from: reviewRequestCollector, myTeamSlugs: scannerServer.myTeamSlugs, settings: scannerSettings)
+        }
+
+        /** Writes the dismisser of each collected event whose review row exists. */
+        private func applyPendingReviewDismissers() {
+            for (reviewNodeId, actor) in collectedDismissers {
+                Review.item(id: reviewNodeId, in: scannerMoc)?.dismisserName = actor
             }
         }
 
@@ -1037,8 +1120,47 @@ enum GraphQL {
             for (pr, paths) in filePathCollector.paths {
                 pr.changedFilePaths = PathFilter.encode(paths)
             }
-            if scannerMoc.hasChanges {
-                try? scannerMoc.save()
+        }
+
+        /**
+         Records who asked me, or one of my teams, for a review, filed by the kind of request it made. A
+         request which names somebody else is dropped, because only my own assignment raises a notification.
+         */
+        private func storeReviewRequesters(from nodeList: Lista<Node>) {
+            let myTeams = scannerServer.myTeamSlugs
+
+            for node in nodeList {
+                guard let parentId = node.parent?.id,
+                      let actor = node.jsonPayload.potentialObject(named: "actor")?.potentialString(named: "login"),
+                      let reviewer = node.jsonPayload.potentialObject(named: "requestedReviewer") else {
+                    continue
+                }
+
+                let namesMe = scannerServer.isMe(reviewer.potentialString(named: "login"))
+                let namesMyTeam = reviewer.potentialString(named: "slug").map(myTeams.contains) ?? false
+
+                guard namesMe || namesMyTeam,
+                      let pr = PullRequest.asParent(with: parentId, in: scannerMoc, parentCache: parentCache) else {
+                    continue
+                }
+                // `timelineItems` arrives oldest first (unlike the v3 issue-events scan), so the last
+                // write here is the newest event, and is the one that should be kept.
+                if namesMe {
+                    pr.personalReviewRequesterName = actor
+                } else {
+                    pr.teamReviewRequesterName = actor
+                }
+            }
+        }
+
+        /** Holds the dismisser of each named review until the scan ends, because its row may come on a later page. */
+        private func collectReviewDismissers(from nodeList: Lista<Node>) {
+            for node in nodeList {
+                guard let actor = node.jsonPayload.potentialObject(named: "actor")?.potentialString(named: "login"),
+                      let reviewNodeId = node.jsonPayload.potentialObject(named: "review")?.potentialString(named: "dismissedReviewNodeId") else {
+                    continue
+                }
+                collectedDismissers[reviewNodeId] = actor
             }
         }
 
@@ -1046,6 +1168,7 @@ enum GraphQL {
             if nodes.isEmpty { return }
 
             // Order must be fixed, since labels may refer to PRs or Issues, ensure they are created first
+            // A review requester is ordered too: it is written onto the row which PullRequest.sync makes.
 
             if let nodeList = nodes["Repository"] {
                 Repo.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache)
@@ -1054,7 +1177,7 @@ enum GraphQL {
                 Issue.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache)
             }
             if let nodeList = nodes["PullRequest"] {
-                PullRequest.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache, filePaths: filePathCollector)
+                PullRequest.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache, filePaths: filePathCollector, reviewRequests: reviewRequestCollector)
             }
             if let nodeList = nodes["Label"] {
                 PRLabel.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache)
@@ -1071,11 +1194,17 @@ enum GraphQL {
             if let nodeList = nodes["Reaction"], let parentType {
                 Reaction.sync(from: nodeList, for: parentType, on: scannerServer, moc: scannerMoc, parentCache: parentCache)
             }
+            if let nodeList = nodes["ReviewRequestedEvent"] {
+                storeReviewRequesters(from: nodeList)
+            }
             if let nodeList = nodes["ReviewRequest"] {
-                Review.syncRequests(from: nodeList, moc: scannerMoc, parentCache: parentCache)
+                Review.collectRequests(from: nodeList, into: reviewRequestCollector, moc: scannerMoc, parentCache: parentCache)
             }
             if let nodeList = nodes["PullRequestReview"] {
                 Review.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache)
+            }
+            if let nodeList = nodes["ReviewDismissedEvent"] {
+                collectReviewDismissers(from: nodeList)
             }
             if let nodeList = nodes["StatusContext"] {
                 PRStatus.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache)

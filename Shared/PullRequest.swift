@@ -37,6 +37,12 @@ final class PullRequest: ListableItem {
     @NSManaged var headLabel: String?
     @NSManaged var baseLabel: String?
     @NSManaged var assignedReviewStatus: Int
+    /** The login of whoever last asked me in person for a review on this pull request. */
+    @NSManaged var personalReviewRequesterName: String?
+    /** The login of whoever last asked one of my teams for a review on this pull request. */
+    @NSManaged var teamReviewRequesterName: String?
+    /** When the review events of this pull request were last asked for. The next query reads from here. */
+    @NSManaged var lastReviewEventScan: Date?
     @NSManaged var changedFilePaths: String?
 
     @NSManaged var statuses: Set<PRStatus>
@@ -98,13 +104,18 @@ final class PullRequest: ListableItem {
         }
     }
 
-    static func sync(from nodes: Lista<Node>, on server: ApiServer, moc: NSManagedObjectContext, parentCache: FetchCache, filePaths: FilePathCollector? = nil) {
+    static func sync(from nodes: Lista<Node>, on server: ApiServer, moc: NSManagedObjectContext, parentCache: FetchCache, filePaths: FilePathCollector? = nil, reviewRequests: ReviewRequestCollector? = nil) {
         syncItems(of: PullRequest.self, from: nodes, on: server, moc: moc, parentCache: parentCache) { pr, node in
             // the file path step answers with no updatedAt, so its payload has to be read above the guard below
             if let files = node.jsonPayload.potentialObject(named: "files") {
                 let paths = files.potentialArray(named: "edges")?
                     .compactMap { $0.potentialObject(named: "node")?.potentialString(named: "path") } ?? []
                 filePaths?.add(paths, for: pr)
+            }
+
+            // the review request step answers the same way, and an empty list still names the pull request
+            if node.jsonPayload.potentialObject(named: "reviewRequests") != nil {
+                reviewRequests?.noteRequest(for: pr)
             }
 
             guard node.created || node.updated,
@@ -273,14 +284,24 @@ final class PullRequest: ListableItem {
         snoozeUntil != nil && shouldWakeOnComment && hasNewCommits
     }
 
-    private func setAssignedReviewStatus(to status: AssignmentStatus) {
+    /** Whether I asked for my own review here. A request with no recorded actor counts as somebody else's act. */
+    var personalReviewRequestedByMe: Bool {
+        apiServer.isMe(personalReviewRequesterName)
+    }
+
+    /** Whether I asked for my team's review here. A request with no recorded actor counts as somebody else's act. */
+    var teamReviewRequestedByMe: Bool {
+        apiServer.isMe(teamReviewRequesterName)
+    }
+
+    private func setAssignedReviewStatus(to status: AssignmentStatus, settings: Settings.Cache) {
         if assignedReviewStatus == status.rawValue {
             return
         }
 
         assignedReviewStatus = status.rawValue
 
-        guard Settings.notifyOnReviewAssignments, !createdByMe else {
+        guard settings.notifyOnReviewAssignments, !createdByMe else {
             return
         }
 
@@ -288,25 +309,37 @@ final class PullRequest: ListableItem {
         case .none, .others:
             break
         case .me:
-            NotificationQueue.add(type: .assignedForReview, for: self)
+            if !personalReviewRequestedByMe {
+                NotificationQueue.add(type: .assignedForReview, for: self)
+            }
         case .myTeam:
-            NotificationQueue.add(type: .assignedToTeamForReview, for: self)
+            if !teamReviewRequestedByMe {
+                NotificationQueue.add(type: .assignedToTeamForReview, for: self)
+            }
         }
     }
 
-    func checkAndStoreReviewAssignments(_ reviewerNames: Set<String>, _ reviewerTeams: Set<String>) {
+    func checkAndStoreReviewAssignments(_ reviewerNames: Set<String>, _ reviewerTeams: Set<String>, myTeamSlugs: Set<String>, settings: Settings.Cache) {
         reviewers = reviewerNames.joined(separator: ",")
         teamReviewers = reviewerTeams.joined(separator: ",")
 
-        if reviewerNames.contains(apiServer.userName.orEmpty) {
-            setAssignedReviewStatus(to: .me)
+        let namesMe = reviewerNames.contains { apiServer.isMe($0) }
+        let namesMyTeam = !reviewerTeams.isEmpty && !reviewerTeams.isDisjoint(with: myTeamSlugs)
+
+        let status: AssignmentStatus = if namesMe {
+            .me
         } else if reviewerTeams.isEmpty {
-            setAssignedReviewStatus(to: .none)
-        } else if apiServer.teams.compactMap(\.slug).contains(where: { reviewerTeams.contains($0) }) {
-            setAssignedReviewStatus(to: .myTeam)
+            .none
+        } else if namesMyTeam {
+            .myTeam
         } else {
-            setAssignedReviewStatus(to: .others)
+            .others
         }
+
+        // a requester login stays while its own kind of request stands, so one kind never discards the other
+        if !namesMe { personalReviewRequesterName = nil }
+        if !namesMyTeam { teamReviewRequesterName = nil }
+        setAssignedReviewStatus(to: status, settings: settings)
     }
 
     @MainActor

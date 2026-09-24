@@ -2,6 +2,46 @@ import CoreData
 import Foundation
 import TrailerJson
 
+/**
+ The review actors which one pass of the issue event scan collected. A dismissal is held here rather
+ than applied at once, because a v3 review row is keyed on `serverId` and may not exist until the
+ review fetch has run. This also enforces first-seen-wins for every actor, because the issue event
+ stream this collector is fed from runs newest first, so the first match for a review, or for one
+ kind of review request on a pull request, is the newest one and is the one that should be kept.
+ */
+@MainActor
+final class ReviewActorCollector {
+    /** The dismisser of each review, keyed by server, because a review id is unique to its server only. */
+    private(set) var dismissers = [NSManagedObjectID: [Int: String]]()
+    private var requestedPullRequests = [RequestKind: Set<NSManagedObjectID>]()
+
+    /** The kind of review request an actor made. */
+    enum RequestKind {
+        case personal, team
+    }
+
+    /** Keeps the first login offered for a review. */
+    func addDismisser(_ login: String, forReview reviewId: Int, on server: ApiServer) {
+        let serverId = server.objectID
+        if dismissers[serverId]?[reviewId] == nil {
+            dismissers[serverId, default: [:]][reviewId] = login
+        }
+    }
+
+    /** Stores the first login offered for one kind of review request on a pull request. */
+    func setRequester(_ login: String, on pullRequest: PullRequest, kind: RequestKind) {
+        guard requestedPullRequests[kind, default: []].insert(pullRequest.objectID).inserted else {
+            return
+        }
+        switch kind {
+        case .personal:
+            pullRequest.personalReviewRequesterName = login
+        case .team:
+            pullRequest.teamReviewRequesterName = login
+        }
+    }
+}
+
 extension API {
     private static func handleRepoSync(for repo: Repo, result: DataResult) {
         switch result {
@@ -62,7 +102,60 @@ extension API {
         }
     }
 
-    private static func markExtraUpdatedItems(from repos: [Repo]) async {
+    /** Reads the review actors out of one repo's issue events. */
+    @MainActor
+    private struct ReviewActorScan {
+        let apiServer: ApiServer
+        let myTeamSlugs: Set<String>
+        let prsByNumber: [Int: PullRequest]
+        let collectDismissers: Bool
+        let collectRequesters: Bool
+        let collector: ReviewActorCollector
+
+        /**
+         Reads one issue event and keeps it when it names a review actor. A review request is applied at
+         once, and only when it names me or one of my teams, and is filed by the kind of request it made.
+         Any other event is ignored.
+         */
+        func read(_ event: TypedJson.Entry, named name: String) {
+            switch name {
+            case "review_dismissed":
+                guard collectDismissers,
+                      let reviewId = event.potentialObject(named: "dismissed_review")?.potentialInt(named: "review_id"),
+                      let actor = event.potentialObject(named: "actor")?.potentialString(named: "login") else {
+                    return
+                }
+                collector.addDismisser(actor, forReview: reviewId, on: apiServer)
+
+            case "review_requested":
+                guard collectRequesters,
+                      let issueNumber = event.potentialObject(named: "issue")?.potentialInt(named: "number"),
+                      let actor = event.potentialObject(named: "actor")?.potentialString(named: "login") else {
+                    return
+                }
+                // An event carries a reviewer or a team, never both, so this chain is safe.
+                if let login = event.potentialObject(named: "requested_reviewer")?.potentialString(named: "login") {
+                    if apiServer.isMe(login), let pr = prsByNumber[issueNumber] {
+                        collector.setRequester(actor, on: pr, kind: .personal)
+                    }
+                } else if let slug = event.potentialObject(named: "requested_team")?.potentialString(named: "slug"),
+                          myTeamSlugs.contains(slug),
+                          let pr = prsByNumber[issueNumber] {
+                    collector.setRequester(actor, on: pr, kind: .team)
+                }
+
+            default:
+                break
+            }
+        }
+    }
+
+    private static func markExtraUpdatedItems(from repos: [Repo], settings: Settings.Cache) async -> ReviewActorCollector {
+        let collector = ReviewActorCollector()
+        let collectDismissers = settings.shouldSyncReviewDismissers
+        let collectRequesters = settings.shouldSyncReviewRequesters
+        let collectActors = collectDismissers || collectRequesters
+
         await withTaskGroup { group in
             for r in repos {
                 let repoFullName = r.fullName.orEmpty
@@ -71,6 +164,17 @@ extension API {
                 r.lastScannedIssueEventId = 0
                 group.addTask { @MainActor in
                     let apiServer = r.apiServer
+                    // only the requester arm reads the teams and the pull requests, so the dismisser arm faults neither
+                    let scan: ReviewActorScan? = if collectActors {
+                        ReviewActorScan(apiServer: apiServer,
+                                        myTeamSlugs: collectRequesters ? apiServer.myTeamSlugs : [],
+                                        prsByNumber: collectRequesters ? Dictionary(r.pullRequests.map { ($0.number, $0) }, uniquingKeysWith: { first, _ in first }) : [:],
+                                        collectDismissers: collectDismissers,
+                                        collectRequesters: collectRequesters,
+                                        collector: collector)
+                    } else {
+                        nil
+                    }
                     let result = await RestAccess.getPagedData(at: "/repos/\(repoFullName)/issues/events", from: apiServer) { data, _ in
                         guard let data, !data.isEmpty else { return true }
 
@@ -81,6 +185,12 @@ extension API {
                             }
                             for i in r.issues {
                                 i.setToUpdatedIfIdle()
+                            }
+                            if let scan {
+                                for event in data {
+                                    guard let eventName = event.potentialString(named: "event") else { continue }
+                                    scan.read(event, named: eventName)
+                                }
                             }
                             r.lastScannedIssueEventId = data.first!.potentialInt(named: "id") ?? 0
                             return true
@@ -98,7 +208,8 @@ extension API {
                                         await Logging.shared.log("Parsed all repo issue events up to the one we already have")
                                         break // we're done
                                     }
-                                    if event.potentialString(named: "event") != nil {
+                                    if let eventName = event.potentialString(named: "event") {
+                                        scan?.read(event, named: eventName)
                                         numbers.insert(issueNumber)
                                     }
                                 }
@@ -121,12 +232,13 @@ extension API {
                 }
             }
         }
+        return collector
     }
 
     static func v3Sync(_ repos: [Repo], to moc: NSManagedObjectContext, settings: Settings.Cache) async {
         await fetchItems(for: repos, in: moc)
         let reposWithSomeItems = repos.filter { !$0.issues.isEmpty || !$0.pullRequests.isEmpty }
-        await markExtraUpdatedItems(from: reposWithSomeItems)
+        let reviewActors = await markExtraUpdatedItems(from: reposWithSomeItems, settings: settings)
         let newOrUpdatedPrs = PullRequest.newOrUpdatedItems(in: moc, fromSuccessfulSyncOnly: true)
         let newOrUpdatedIssues = Issue.newOrUpdatedItems(in: moc, fromSuccessfulSyncOnly: true)
 
@@ -179,7 +291,7 @@ extension API {
 
             if settings.shouldSyncReviewAssignments {
                 group.addTask {
-                    await fetchReviewAssignmentsForCurrentPullRequests(for: newOrUpdatedPrs)
+                    await fetchReviewAssignmentsForCurrentPullRequests(for: newOrUpdatedPrs, settings: settings)
                 }
             }
 
@@ -201,6 +313,15 @@ extension API {
                 commentGroup.addTask {
                     await fetchCommentsForCurrentIssues(to: moc, for: newOrUpdatedIssues)
                     await checkIssueClosures(in: moc)
+                }
+            }
+
+            // v3 reviews are keyed on serverId, so the rows may not exist until the review fetch above has run
+            for (apiServerId, dismissers) in reviewActors.dismissers {
+                for review in Review.reviews(with: Array(dismissers.keys), on: apiServerId, in: moc) {
+                    if let name = dismissers[review.serverId] {
+                        review.dismisserName = name
+                    }
                 }
             }
 
@@ -451,7 +572,7 @@ extension API {
         }
     }
 
-    private static func fetchReviewAssignmentsForCurrentPullRequests(for prs: [PullRequest]) async {
+    private static func fetchReviewAssignmentsForCurrentPullRequests(for prs: [PullRequest], settings: Settings.Cache) async {
         await withThrowingTaskGroup { group in
             for p in prs {
                 group.addTask { @MainActor in
@@ -465,7 +586,7 @@ extension API {
                         for userName in userList.compactMap({ $0.potentialString(named: "login") }) {
                             reviewUsers.insert(userName)
                         }
-                        p.checkAndStoreReviewAssignments(reviewUsers, reviewTeams)
+                        p.checkAndStoreReviewAssignments(reviewUsers, reviewTeams, myTeamSlugs: p.apiServer.myTeamSlugs, settings: settings)
 
                     } else if let data, let userList = data.potentialArray(named: "users"), let teamList = data.potentialArray(named: "teams") {
                         // New API results
@@ -475,7 +596,7 @@ extension API {
                         for teamName in teamList.compactMap({ $0.potentialString(named: "slug") }) {
                             reviewTeams.insert(teamName)
                         }
-                        p.checkAndStoreReviewAssignments(reviewUsers, reviewTeams)
+                        p.checkAndStoreReviewAssignments(reviewUsers, reviewTeams, myTeamSlugs: p.apiServer.myTeamSlugs, settings: settings)
 
                     } else {
                         p.apiServer.lastSyncSucceeded = false
