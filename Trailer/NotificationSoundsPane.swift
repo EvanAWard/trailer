@@ -12,73 +12,68 @@ import AppKit
 final class NotificationSoundsPane: NSObject {
     private static let labelWidth: CGFloat = 200
     private static let popupWidth: CGFloat = 200
+    /** The gap between the columns of the header and of every row. */
+    private static let columnSpacing: CGFloat = 10
     /** The left and right inset of the rows. The header uses it too, so the columns line up. */
     private static let horizontalInset: CGFloat = 20
+    /** The vertical gap between the headings and rows of the scrolling list. */
+    private static let rowSpacing: CGFloat = 6
+    private static let listTopInset: CGFloat = 6
+    private static let listBottomInset: CGFloat = 14
 
     private var rows = [(type: NotificationType, popup: NSPopUpButton, checkbox: NSButton?)]()
 
     init(container: NSView) {
         super.init()
 
-        let stack = NSStackView()
-        stack.orientation = .vertical
-        stack.alignment = .leading
-        stack.spacing = 6
-        stack.edgeInsets = NSEdgeInsets(top: 6,
-                                        left: NotificationSoundsPane.horizontalInset,
-                                        bottom: 14,
-                                        right: NotificationSoundsPane.horizontalInset)
-        stack.translatesAutoresizingMaskIntoConstraints = false
-
         let typesByGroup = Dictionary(grouping: NotificationType.allCases, by: \.group)
 
+        var items = [NSView]()
         for group in NotificationType.Group.allCases {
             let heading = NSTextField(labelWithString: group.title)
             heading.font = .boldSystemFont(ofSize: NSFont.systemFontSize)
-            stack.addArrangedSubview(heading)
+            heading.sizeToFit()
+            items.append(heading)
 
             for type in typesByGroup[group] ?? [] {
-                stack.addArrangedSubview(row(for: type))
+                items.append(row(for: type))
             }
         }
 
-        let scroll = NSScrollView()
+        // The document view is flipped, so the list is laid out from the top down.
+        let doc = FlippedView()
+        var y = NotificationSoundsPane.listTopInset
+        for (index, item) in items.enumerated() {
+            if index > 0 {
+                y += NotificationSoundsPane.rowSpacing
+            }
+            item.setFrameOrigin(NSPoint(x: NotificationSoundsPane.horizontalInset, y: y))
+            doc.addSubview(item)
+            y += item.frame.height
+        }
+        doc.frame = NSRect(x: 0, y: 0, width: container.bounds.width, height: y + NotificationSoundsPane.listBottomInset)
+        doc.autoresizingMask = .width
+
+        // The header sits outside the scroll view, so it stays in view while the rows scroll under it.
+        // The container is not flipped, so the header and separator are placed down from its top edge.
+        let header = headerRow()
+        header.setFrameOrigin(NSPoint(x: NotificationSoundsPane.horizontalInset,
+                                      y: container.bounds.height - 14 - header.frame.height))
+        header.autoresizingMask = .minYMargin
+        container.addSubview(header)
+
+        let separator = NSBox(frame: NSRect(x: 0, y: header.frame.minY - 6 - 1, width: container.bounds.width, height: 1))
+        separator.boxType = .separator
+        separator.autoresizingMask = [.width, .minYMargin]
+        container.addSubview(separator)
+
+        let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: container.bounds.width, height: separator.frame.minY))
+        scroll.autoresizingMask = [.width, .height]
         scroll.hasVerticalScroller = true
         scroll.borderType = .noBorder
         scroll.drawsBackground = false
-        scroll.translatesAutoresizingMaskIntoConstraints = false
-
-        let clip = FlippedClipView()
-        scroll.contentView = clip
-        scroll.documentView = stack
-
-        // The header sits outside the scroll view, so it stays in view while the rows scroll under it.
-        let header = headerRow()
-        container.addSubview(header)
-
-        let separator = NSBox()
-        separator.boxType = .separator
-        separator.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(separator)
-
+        scroll.documentView = doc
         container.addSubview(scroll)
-
-        NSLayoutConstraint.activate([
-            header.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: NotificationSoundsPane.horizontalInset),
-            header.topAnchor.constraint(equalTo: container.topAnchor, constant: 14),
-            separator.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            separator.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            // A zero-frame `NSBox` has no intrinsic height and picks its axis from its bounds, so state both.
-            separator.heightAnchor.constraint(equalToConstant: 1),
-            separator.topAnchor.constraint(equalTo: header.bottomAnchor, constant: 6),
-            scroll.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            scroll.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            scroll.topAnchor.constraint(equalTo: separator.bottomAnchor),
-            scroll.bottomAnchor.constraint(equalTo: container.bottomAnchor),
-            stack.leadingAnchor.constraint(equalTo: clip.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: clip.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: clip.topAnchor)
-        ])
 
         reload()
     }
@@ -119,28 +114,33 @@ final class NotificationSoundsPane: NSObject {
     }
 
     /** Lays out the three columns of the header and of every row, so the columns cannot drift. */
-    private static func columnStack(_ views: [NSView]) -> NSStackView {
-        let stack = NSStackView(views: views)
-        stack.orientation = .horizontal
-        stack.spacing = 10
+    private static func columnRow(_ views: [NSView]) -> NSView {
+        for case let control as NSControl in views {
+            control.sizeToFit()
+        }
+        views[0].frame.size.width = labelWidth
+        views[1].frame.size.width = popupWidth
 
-        NSLayoutConstraint.activate([
-            views[0].widthAnchor.constraint(equalToConstant: labelWidth),
-            views[1].widthAnchor.constraint(equalToConstant: popupWidth)
-        ])
+        let row = NSView()
+        let height = views.map(\.frame.height).max() ?? 0
+        var x: CGFloat = 0
+        for view in views {
+            view.setFrameOrigin(NSPoint(x: x, y: (height - view.frame.height) / 2))
+            row.addSubview(view)
+            x += view.frame.width + columnSpacing
+        }
+        row.frame = NSRect(x: 0, y: 0, width: x - columnSpacing, height: height)
 
-        return stack
+        return row
     }
 
     /** Names the popup and checkbox columns. */
     private func headerRow() -> NSView {
-        let header = NotificationSoundsPane.columnStack([
+        NotificationSoundsPane.columnRow([
             NSView(),
             NotificationSoundsPane.secondaryLabel("Sound"),
             NotificationSoundsPane.secondaryLabel("Notify")
         ])
-        header.translatesAutoresizingMaskIntoConstraints = false
-        return header
     }
 
     private func row(for type: NotificationType) -> NSView {
@@ -166,7 +166,7 @@ final class NotificationSoundsPane: NSObject {
 
         rows.append((type, popup, checkbox))
 
-        return NotificationSoundsPane.columnStack([label, popup, trailing])
+        return NotificationSoundsPane.columnRow([label, popup, trailing])
     }
 
     @objc
@@ -190,9 +190,11 @@ final class NotificationSoundsPane: NSObject {
 }
 
 /**
- A clip view with a flipped coordinate system, so a scroll view whose document view is not itself
- flipped (such as an `NSStackView`) still opens scrolled to the top of its content.
+ A view with a flipped coordinate system. As the document view of a scroll view, it opens scrolled to
+ the top of its content and keeps the top in place when the scroll view is resized.
  */
-private final class FlippedClipView: NSClipView {
-    override var isFlipped: Bool { true }
+private final class FlippedView: NSView {
+    override var isFlipped: Bool {
+        true
+    }
 }

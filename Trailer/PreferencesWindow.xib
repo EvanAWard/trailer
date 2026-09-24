@@ -2302,7 +2302,7 @@ Tip: Reactions are treated like comments, i.e. the rules about being notified on
                             </tabViewItem>
                             <tabViewItem label="Notifications" identifier="" id="Nt1-So-un1">
                                 <view key="view" id="Nt2-So-un2">
-                                    <rect key="frame" x="10" y="33" width="898" height="426"/>
+                                    <rect key="frame" x="10" y="33" width="1054" height="426"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 </view>
                             </tabViewItem>
