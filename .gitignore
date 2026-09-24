@@ -21,3 +21,5 @@ Trailer.xcodeproj/xcuserdata
 # Claude Code (machine-specific paths, local state)
 .claude/settings.local.json
 .claude/.cc-writes/
+
+docs/superpowers

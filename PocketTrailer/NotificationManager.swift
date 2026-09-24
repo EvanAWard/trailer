@@ -245,6 +245,15 @@ final class NotificationManager: NSObject {
             notification.body = r.body.orEmpty
             notification.categoryIdentifier = "mutable"
 
+        case .myReviewDismissed:
+            guard let r = item.asReview else { return }
+            let p = r.pullRequest
+            if p.shouldSkipNotifications { return }
+            notification.title = "Your Review Was Dismissed"
+            notification.subtitle = p.title.orEmpty
+            notification.body = r.body.orEmpty
+            notification.categoryIdentifier = "mutable"
+
         case .assignedForReview:
             guard let p = item.asPr, !p.shouldSkipNotifications else { return }
             notification.title = "PR Review Requested"
