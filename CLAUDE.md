@@ -62,6 +62,16 @@ Notes that will save you a cycle:
 - Language mode is Swift 5 (`SWIFT_VERSION = 5.0`) even though the toolchain is Swift 6.
   Deployment targets: macOS 12.4, iOS 16.0, watchOS 8.7.
 
+## Pull requests: the gh-stack stack
+
+To put a new branch on top of a PR stack:
+
+1. Check out the top branch of the stack (the last entry in `.git/gh-stack`).
+2. `GH_REPO=EvanAWard/trailer gh stack add <branch>`. If `<branch>` already exists it is adopted
+   unchanged; otherwise it is created at the current commit. `add` also switches to that branch.
+3. `GH_REPO=EvanAWard/trailer gh stack submit --auto --open`. It pushes every branch, creates the new
+   PR (titled from the commit subject), and updates the stack on GitHub.
+
 ## Targets and how code is shared
 
 | Target | Notes |
