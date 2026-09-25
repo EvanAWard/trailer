@@ -133,6 +133,7 @@ final class MenuBarSet {
                 existingItem.length = imageWidth
             } else {
                 existingItem = NSStatusBar.system.statusItem(withLength: imageWidth)
+                existingItem?.autosaveName = menu.dataSource.uniqueIdentifier
                 menu.statusItem = existingItem
                 if let button = existingItem?.button {
                     button.target = menu
