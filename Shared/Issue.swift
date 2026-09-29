@@ -128,21 +128,21 @@ final class Issue: ListableItem {
         return try! moc.fetch(f)
     }
 
-    override var shouldHideBecauseOfRepoHidingPolicy: Section.HidingCause? {
+    override func shouldHideBecauseOfRepoHidingPolicy(settings: Settings.Cache) -> Section.HidingCause? {
         if createdByMe {
-            switch repo.itemHidingPolicy {
-            case RepoHidingPolicy.hideAllMyAuthoredItems.rawValue:
+            switch repo.hidingPolicy(settings: settings) {
+            case .hideAllMyAuthoredItems:
                 .hidingMyAuthoredIssues
-            case RepoHidingPolicy.hideMyAuthoredIssues.rawValue:
+            case .hideMyAuthoredIssues:
                 .hidingMyAuthoredIssues
             default:
                 nil
             }
         } else {
-            switch repo.itemHidingPolicy {
-            case RepoHidingPolicy.hideAllOthersItems.rawValue:
+            switch repo.hidingPolicy(settings: settings) {
+            case .hideAllOthersItems:
                 .hidingAllOthersItems
-            case RepoHidingPolicy.hideOthersIssues.rawValue:
+            case .hideOthersIssues:
                 .hidingOthersIssues
             default:
                 nil
