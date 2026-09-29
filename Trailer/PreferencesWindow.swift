@@ -127,6 +127,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     // Paths
     @IBOutlet private var pathFilterList: NSTokenField!
     @IBOutlet private var pathFilterMovePolicy: NSPopUpButton!
+    @IBOutlet private var pathFilterOverridesRepoPolicy: NSButton!
     @IBOutlet private var pathFilterNote: NSTextField!
 
     // Display
@@ -501,16 +502,17 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
 
     /**
      The note under the path controls, which names the setting the move depends on, and warns about the
-     two states that leave a moved item out of sight. It also carries the dim state of the two
-     controls, because a control which cannot act should not accept input.
+     states that leave a matched item out of sight or without a badge. It also carries the dim state of
+     the path controls, because a control which cannot act should not accept input.
      */
     private func updatePathFilterNote() {
         let v4 = Settings.useV4API
         pathFilterList.isEnabled = v4
         pathFilterMovePolicy.isEnabled = v4
+        pathFilterOverridesRepoPolicy.isEnabled = v4
 
         let armed = !PathFilter.patterns(from: Settings.pathFilterList).isEmpty
-            && Settings.pathFilterMovePolicy.preferredSection != nil
+            && (Settings.pathFilterMovePolicy.preferredSection != nil || Settings.pathFilterOverridesRepoPolicy)
 
         let text: String
         let color: NSColor
@@ -523,6 +525,9 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
         } else if armed, Settings.hideUncommentedItems {
             text = "\"Only display items with unread badges\" keeps moved items hidden."
             color = .appRed
+        } else if armed, Settings.pathFilterOverridesRepoPolicy, !Settings.showCommentsEverywhere {
+            text = "An item shown in the All section badges only while \"Badge & send notifications for items in every section\" is on."
+            color = .secondaryLabelColor
         } else {
             text = "Applies to the repositories with File Paths ticked."
             color = .secondaryLabelColor
@@ -693,6 +698,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
         newItemInOwnedRepoMovePolicy.toolTip = Settings.newItemInOwnedRepoMovePolicyHelp
         pathFilterList.toolTip = Settings.pathFilterListHelp
         pathFilterMovePolicy.toolTip = Settings.pathFilterMovePolicyHelp
+        pathFilterOverridesRepoPolicy.toolTip = Settings.pathFilterOverridesRepoPolicyHelp
         notifyOnAllChangeRequests.toolTip = Settings.notifyOnAllReviewChangeRequestsHelp
         notifyOnChangeRequests.toolTip = Settings.notifyOnReviewChangeRequestsHelp
         notifyOnAcceptances.toolTip = Settings.notifyOnReviewAcceptancesHelp
@@ -852,6 +858,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
         newItemInOwnedRepoMovePolicy.selectItem(at: Settings.newItemInOwnedRepoMovePolicy.movePolicyMenuIndex)
         pathFilterList.objectValue = Settings.pathFilterList
         pathFilterMovePolicy.selectItem(at: Settings.pathFilterMovePolicy.movePolicyMenuIndex)
+        pathFilterOverridesRepoPolicy.integerValue = Settings.pathFilterOverridesRepoPolicy.asInt
         refreshAnyRepoSyncsFilePaths()
         updatePathFilterNote()
 
@@ -1001,6 +1008,12 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
 
     @IBAction private func pathFilterMovePolicySelected(_ sender: NSPopUpButton) {
         Settings.pathFilterMovePolicy = Section(movePolicyMenuIndex: sender.indexOfSelectedItem)
+        deferredUpdateTimer.push()
+        updatePathFilterNote()
+    }
+
+    @IBAction private func pathFilterOverridesRepoPolicySelected(_ sender: NSButton) {
+        Settings.pathFilterOverridesRepoPolicy = sender.integerValue == 1
         deferredUpdateTimer.push()
         updatePathFilterNote()
     }
@@ -1321,6 +1334,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     @IBAction private func showAllCommentsSelected(_ sender: NSButton) {
         Settings.showCommentsEverywhere = (sender.integerValue == 1)
         deferredUpdateTimer.push()
+        updatePathFilterNote()
     }
 
     @IBAction private func sortOrderSelected(_ sender: NSButton) {
