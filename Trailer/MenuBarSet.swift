@@ -127,7 +127,9 @@ final class MenuBarSet {
             existingItem = NSStatusBar.system.statusItem(withLength: imageWidth)
             existingItem?.autosaveName = menu.dataSource.uniqueIdentifier
             menu.statusItem = existingItem
-            if let button = existingItem?.button {
+            if #available(macOS 27, *) {
+                existingItem?.expandedInterfaceDelegate = menu
+            } else if let button = existingItem?.button {
                 button.target = menu
                 button.action = #selector(MenuWindow.buttonSelected)
             }
@@ -135,7 +137,9 @@ final class MenuBarSet {
 
         if let button = existingItem?.button {
             button.image = sivImage
-            button.appearsDisabled = state == .highlighted
+            if #unavailable(macOS 27) {
+                button.appearsDisabled = state == .highlighted
+            }
         }
 
         menu.reload()
