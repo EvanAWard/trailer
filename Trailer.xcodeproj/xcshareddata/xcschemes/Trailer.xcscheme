@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "168BC6A917EC2DF000BC4584"
-               BuildableName = "Trailer.app"
+               BuildableName = "Trailer-E.app"
                BlueprintName = "Trailer"
                ReferencedContainer = "container:Trailer.xcodeproj">
             </BuildableReference>
@@ -31,7 +31,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "168BC6A917EC2DF000BC4584"
-            BuildableName = "Trailer.app"
+            BuildableName = "Trailer-E.app"
             BlueprintName = "Trailer"
             ReferencedContainer = "container:Trailer.xcodeproj">
          </BuildableReference>
@@ -56,7 +56,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "168BC6A917EC2DF000BC4584"
-            BuildableName = "Trailer.app"
+            BuildableName = "Trailer-E.app"
             BlueprintName = "Trailer"
             ReferencedContainer = "container:Trailer.xcodeproj">
          </BuildableReference>
@@ -91,7 +91,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "168BC6A917EC2DF000BC4584"
-            BuildableName = "Trailer.app"
+            BuildableName = "Trailer-E.app"
             BlueprintName = "Trailer"
             ReferencedContainer = "container:Trailer.xcodeproj">
          </BuildableReference>

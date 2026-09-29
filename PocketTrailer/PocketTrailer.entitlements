@@ -16,11 +16,11 @@
 	</array>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.Trailer</string>
+		<string>group.com.eaw.Trailer</string>
 	</array>
 	<key>keychain-access-groups</key>
 	<array>
-		<string>$(AppIdentifierPrefix)com.housetrip.Trailer</string>
+		<string>$(AppIdentifierPrefix)com.eaw.Trailer</string>
 	</array>
 </dict>
 </plist>
