@@ -91,63 +91,51 @@ final class MenuBarSet {
         }
     }
 
-    private func shouldShow(type: ListableItem.Type, settings: Settings.Cache) -> Bool {
-        let fc = ListableItem.requestForItems(of: type, withFilter: nil, sectionIndex: -1, criterion: viewCriterion, settings: settings)
-        fc.fetchLimit = 1
-        return try! DataManager.main.count(for: fc) > 0
-    }
-
     private func updateMenu(of type: ListableItem.Type,
                             menu: MenuWindow,
-                            forceVisible: Bool,
                             hasUnread: Bool,
                             settings: Settings.Cache,
                             reasonForEmpty: @escaping @MainActor (String) async -> NSAttributedString) async {
-        if forceVisible || shouldShow(type: type, settings: settings) {
-            let isRefreshing = API.isRefreshing
+        let isRefreshing = API.isRefreshing
 
-            let somethingFailed = ApiServer.shouldReportRefreshFailure(in: DataManager.main) && (viewCriterion?.relatedServerFailed ?? true)
+        let somethingFailed = ApiServer.shouldReportRefreshFailure(in: DataManager.main) && (viewCriterion?.relatedServerFailed ?? true)
 
-            let excludeSnoozed = !Settings.countVisibleSnoozedItems
-            let f = ListableItem.requestForItems(of: type, withFilter: menu.filter.stringValue, sectionIndex: -1, criterion: viewCriterion, excludeSnoozed: excludeSnoozed, settings: settings)
-            let countString = somethingFailed ? "X" : (Settings.hideMenubarCounts ? "" : String(try! DataManager.main.count(for: f)))
+        let excludeSnoozed = !Settings.countVisibleSnoozedItems
+        let f = ListableItem.requestForItems(of: type, withFilter: menu.filter.stringValue, sectionIndex: -1, criterion: viewCriterion, excludeSnoozed: excludeSnoozed, settings: settings)
+        let countString = somethingFailed ? "X" : (Settings.hideMenubarCounts ? "" : String(try! DataManager.main.count(for: f)))
 
-            let label = viewCriterion?.label
-            await Logging.shared.log("Updating \(label ?? "general") \(type) menu, \(countString) total items")
+        let label = viewCriterion?.label
+        await Logging.shared.log("Updating \(label ?? "general") \(type) menu, \(countString) total items")
 
-            let state: StatusItemView.State = if menu.isVisible {
-                .highlighted
-            } else if somethingFailed || hasUnread {
-                .unread
-            } else if Settings.grayOutWhenRefreshing, isRefreshing {
-                .grayed
-            } else {
-                .regular
-            }
-
-            let sivImage = StatusItemView.makeIcon(type: type, state: state, countLabel: countString, title: label)
-            let imageWidth = sivImage.size.width.rounded(.down) - 1
-            var existingItem = menu.statusItem
-
-            if let existingItem {
-                existingItem.length = imageWidth
-            } else {
-                existingItem = NSStatusBar.system.statusItem(withLength: imageWidth)
-                existingItem?.autosaveName = menu.dataSource.uniqueIdentifier
-                menu.statusItem = existingItem
-                if let button = existingItem?.button {
-                    button.target = menu
-                    button.action = #selector(MenuWindow.buttonSelected)
-                }
-            }
-
-            if let button = existingItem?.button {
-                button.image = sivImage
-                button.appearsDisabled = state == .highlighted
-            }
-
+        let state: StatusItemView.State = if menu.isVisible {
+            .highlighted
+        } else if somethingFailed || hasUnread {
+            .unread
+        } else if Settings.grayOutWhenRefreshing, isRefreshing {
+            .grayed
         } else {
-            menu.hideStatusItem()
+            .regular
+        }
+
+        let sivImage = StatusItemView.makeIcon(type: type, state: state, countLabel: countString, title: label)
+        let imageWidth = sivImage.size.width.rounded(.down) - 1
+        var existingItem = menu.statusItem
+
+        if let existingItem {
+            existingItem.length = imageWidth
+        } else {
+            existingItem = NSStatusBar.system.statusItem(withLength: imageWidth)
+            existingItem?.autosaveName = menu.dataSource.uniqueIdentifier
+            menu.statusItem = existingItem
+            if let button = existingItem?.button {
+                button.target = menu
+                button.action = #selector(MenuWindow.buttonSelected)
+            }
+        }
+
+        if let button = existingItem?.button {
+            button.image = sivImage
+            button.appearsDisabled = state == .highlighted
         }
 
         menu.reload()
@@ -163,7 +151,7 @@ final class MenuBarSet {
     func updateIssuesMenu(forceVisible: Bool = false, settings: Settings.Cache) async {
         if forceVisible || Repo.mayProvideIssuesForDisplay(fromServerWithId: viewCriterion?.apiServerId) {
             let hasUnread = Issue.badgeCount(in: DataManager.main, criterion: viewCriterion, settings: settings) > 0
-            await updateMenu(of: Issue.self, menu: issuesMenu, forceVisible: forceVisible, hasUnread: hasUnread, settings: settings) {
+            await updateMenu(of: Issue.self, menu: issuesMenu, hasUnread: hasUnread, settings: settings) {
                 Issue.reasonForEmpty(with: $0, criterion: self.viewCriterion)
             }
 
@@ -176,7 +164,7 @@ final class MenuBarSet {
         let sid = viewCriterion?.apiServerId
         if forceVisible || Repo.mayProvidePrsForDisplay(fromServerWithId: sid) || !Repo.mayProvideIssuesForDisplay(fromServerWithId: sid) {
             let hasUnread = PullRequest.badgeCount(in: DataManager.main, criterion: viewCriterion, settings: settings) > 0
-            await updateMenu(of: PullRequest.self, menu: prMenu, forceVisible: forceVisible, hasUnread: hasUnread, settings: settings) {
+            await updateMenu(of: PullRequest.self, menu: prMenu, hasUnread: hasUnread, settings: settings) {
                 PullRequest.reasonForEmpty(with: $0, criterion: self.viewCriterion)
             }
 
