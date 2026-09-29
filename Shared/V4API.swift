@@ -31,6 +31,7 @@ extension API {
         static let comments = SyncSteps(rawValue: 1 << 2)
         static let reviewRequests = SyncSteps(rawValue: 1 << 3)
         static let statuses = SyncSteps(rawValue: 1 << 4)
+        static let filePaths = SyncSteps(rawValue: 1 << 5)
 
         var toString: String {
             var ret = [String]()
@@ -39,6 +40,7 @@ extension API {
             if contains(.comments) { ret.append("Comments") }
             if contains(.reviewRequests) { ret.append("Requests") }
             if contains(.statuses) { ret.append("Statuses") }
+            if contains(.filePaths) { ret.append("File Paths") }
             return ret.joined(separator: ", ")
         }
     }
@@ -108,6 +110,17 @@ extension API {
             let reviews = Review.newOrUpdatedItems(in: moc, fromSuccessfulSyncOnly: true)
             try await GraphQL.updateComments(for: reviews, profile: settings.syncProfile)
             await Logging.shared.log("Review comment fetch phase complete")
+
+            if settings.shouldSyncFilePaths {
+                let pathPrs = PullRequest.filePathCheckBatch(in: moc)
+                try await GraphQL.update(for: pathPrs, steps: [.filePaths], settings: settings)
+                await Logging.shared.log("PR file path fetch phase complete")
+            } else {
+                // a stored path list must not outlive the feature, whatever route switched it off
+                for pr in PullRequest.itemsHoldingChangedPaths(in: moc) {
+                    pr.changedFilePaths = nil
+                }
+            }
         }
 
         let issueTask = Task {
