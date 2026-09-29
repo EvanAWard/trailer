@@ -86,9 +86,15 @@ final class NotificationManager: NSObject {
             UNNotificationCategory(identifier: "repo", actions: [], intentIdentifiers: [])
         ])
 
+        #if os(macOS)
+            let options: UNAuthorizationOptions = [.alert, .sound, .badge]
+        #else
+            let options: UNAuthorizationOptions = .provisional
+        #endif
+
         Task {
             do {
-                if try await n.requestAuthorization(options: .provisional) {
+                if try await n.requestAuthorization(options: options) {
                     await Logging.shared.log("Successfully registered for local notifications")
                 } else {
                     await Logging.shared.log("Denied permission for notifications")
@@ -270,6 +276,10 @@ final class NotificationManager: NSObject {
                 return
             }
         }
+
+        #if os(macOS)
+            notification.sound = Settings.notificationSound(for: type).prepared()
+        #endif
 
         notification.userInfo = DataManager.info(for: item)
 
