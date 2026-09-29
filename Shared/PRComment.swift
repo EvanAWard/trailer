@@ -189,7 +189,7 @@ final class PRComment: DataItem {
     private func fill(from info: TypedJson.Entry) {
         body = info.potentialString(named: "body")
 
-        if let id = info.potentialInt(named: "pull_request_review_id"), let moc = managedObjectContext, let r = Review.review(with: id, in: moc) {
+        if let id = info.potentialInt(named: "pull_request_review_id"), let moc = managedObjectContext, let r = Review.review(with: id, on: apiServer.objectID, in: moc) {
             review = r
         } else {
             review = nil

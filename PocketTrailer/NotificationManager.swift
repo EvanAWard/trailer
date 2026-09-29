@@ -240,7 +240,9 @@ final class NotificationManager: NSObject {
             guard let r = item.asReview else { return }
             let p = r.pullRequest
             if p.shouldSkipNotifications { return }
-            notification.title = "@\(r.username.orEmpty) Dismissed A Review"
+            // the dismisser is unknown for a dismissal older than the event window, so fall back to the review author
+            let actor = r.dismisserName ?? r.username.orEmpty
+            notification.title = "@\(actor) Dismissed A Review"
             notification.subtitle = p.title.orEmpty
             notification.body = r.body.orEmpty
             notification.categoryIdentifier = "mutable"

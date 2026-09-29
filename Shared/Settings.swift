@@ -170,6 +170,8 @@ enum Settings {
         let shouldSyncReactions: Bool
         let shouldSyncReviews: Bool
         let shouldSyncReviewAssignments: Bool
+        let shouldSyncReviewDismissers: Bool
+        let shouldSyncReviewRequesters: Bool
         let shouldSyncFilePaths: Bool
 
         init() {
@@ -181,11 +183,16 @@ enum Settings {
 
             shouldSyncFilePaths = !pathFilterPatterns.isEmpty && pathFilterMovePolicy != nil
 
-            shouldSyncReviews = displayReviewsOnItems
-                || notifyOnReviewDismissals
+            let anyDismissalNotifications = notifyOnReviewDismissals
+                || notifyOnAllReviewDismissals
                 || notifyOnMyReviewDismissals
+
+            shouldSyncReviews = displayReviewsOnItems
+                || anyDismissalNotifications
                 || notifyOnReviewAcceptances
+                || notifyOnAllReviewAcceptances
                 || notifyOnReviewChangeRequests
+                || notifyOnAllReviewChangeRequests
                 || autoHidePrsIApproved
                 || autoHidePrsIRejected
 
@@ -194,6 +201,10 @@ enum Settings {
                 || notifyOnReviewAssignments
                 || (assignedDirectReviewHandlingPolicy.visible)
                 || (assignedTeamReviewHandlingPolicy.visible)
+
+            shouldSyncReviewDismissers = anyDismissalNotifications
+
+            shouldSyncReviewRequesters = notifyOnReviewAssignments
 
             requiresReviewApis = shouldSyncReviews || shouldSyncReviewAssignments
         }
@@ -808,11 +819,11 @@ enum Settings {
 
     @UserDefault(key: "NOTIFY_ON_REVIEW_DISMISSALS", defaultValue: false)
     static var notifyOnReviewDismissals: Bool
-    static let notifyOnReviewDismissalsHelp = "Issue a notification when someone dismissed a review in a PR that required changes."
+    static let notifyOnReviewDismissalsHelp = "Issue a notification when someone dismissed a review in a PR that required changes. Nothing is issued when I am the person who dismissed it."
 
     @UserDefault(key: "NOTIFY_ON_MY_REVIEW_DISMISSALS", defaultValue: false)
     static var notifyOnMyReviewDismissals: Bool
-    static let notifyOnMyReviewDismissalsHelp = "Issue a notification when someone dismisses a review that I submitted, on any PR that Trailer shows."
+    static let notifyOnMyReviewDismissalsHelp = "Issue a notification when someone dismisses a review that I submitted, on any PR that Trailer shows. Nothing is issued when I am the person who dismissed it."
 
     @UserDefault(key: "NOTIFY_ON_ALL_REVIEW_CHANGE_REQUESTS", defaultValue: false)
     static var notifyOnAllReviewChangeRequests: Bool
@@ -824,11 +835,11 @@ enum Settings {
 
     @UserDefault(key: "NOTIFY_ON_ALL_REVIEW_DISMISSALS", defaultValue: false)
     static var notifyOnAllReviewDismissals: Bool
-    static let notifyOnAllReviewDismissalsHelp = "Do this for all items, not just those created by me."
+    static let notifyOnAllReviewDismissalsHelp = "Do this for all items, not just those created by me. Nothing is issued when I am the person who dismissed it."
 
     @UserDefault(key: "NOTIFY_ON_REVIEW_ASSIGNMENTS", defaultValue: false)
     static var notifyOnReviewAssignments: Bool
-    static let notifyOnReviewAssignmentsHelp = "Issue a notification when someone assigns me a PR to review."
+    static let notifyOnReviewAssignmentsHelp = "Issue a notification when someone assigns me a PR to review. Nothing is issued when I am the person who requested the review, such as through one of my own teams."
 
     @UserDefault(key: "SHOW_STATUSES_EVERYWHERE", defaultValue: false)
     static var showStatusesOnAllItems: Bool

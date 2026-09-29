@@ -3,10 +3,40 @@ import Lista
 import TrailerJson
 import TrailerQL
 
+/**
+ The review requests which one scan of one server has collected, keyed by pull request. The answer
+ pages the requests of a pull request, so one page holds only part of the list, and the whole list is
+ applied when the scan ends.
+ */
+final class ReviewRequestCollector {
+    private(set) var userLogins = [PullRequest: Set<String>]()
+    private(set) var teamSlugs = [PullRequest: Set<String>]()
+    /** The pull requests which the answer named, including any which no request names. */
+    private(set) var pullRequests = Set<PullRequest>()
+
+    /** Records that the answer named this pull request, which an empty list must also do. */
+    func noteRequest(for pr: PullRequest) {
+        pullRequests.insert(pr)
+    }
+
+    func add(login: String, for pr: PullRequest) {
+        userLogins[pr, default: []].insert(login)
+        pullRequests.insert(pr)
+    }
+
+    func add(teamSlug: String, for pr: PullRequest) {
+        teamSlugs[pr, default: []].insert(teamSlug)
+        pullRequests.insert(pr)
+    }
+}
+
 final class Review: DataItem {
+    @NSManaged var serverId: Int
     @NSManaged var body: String?
     @NSManaged var username: String?
     @NSManaged var state: String?
+    /** The login of whoever dismissed this review. GitHub does not carry it on the review itself, so a sync path which reads no events leaves it nil. */
+    @NSManaged var dismisserName: String?
 
     @NSManaged var pullRequest: PullRequest
     @NSManaged var comments: Set<PRComment>
@@ -21,38 +51,31 @@ final class Review: DataItem {
         case DISMISSED
     }
 
-    static func syncRequests(from nodes: Lista<Node>, moc: NSManagedObjectContext, parentCache: FetchCache) {
-        var prIdsToAssignedUsers = [String: Set<String>]()
-        var prIdsToAssignedTeams = [String: Set<String>]()
-
+    /** Reads one page of review requests into the collector. */
+    static func collectRequests(from nodes: Lista<Node>, into collector: ReviewRequestCollector, moc: NSManagedObjectContext, parentCache: FetchCache) {
         for node in nodes {
-            guard node.elementType == "ReviewRequest",
-                  let parentId = node.parent?.id else {
+            guard let parentId = node.parent?.id,
+                  let parent = PullRequest.asParent(with: parentId, in: moc, parentCache: parentCache),
+                  let reviewerJson = node.jsonPayload.potentialObject(named: "requestedReviewer") else {
                 continue
             }
 
-            if let reviewerJson = node.jsonPayload.potentialObject(named: "requestedReviewer") {
-                if let login = reviewerJson.potentialString(named: "login") {
-                    var previous = prIdsToAssignedUsers[parentId]
-                    previous?.insert(login)
-                    prIdsToAssignedUsers[parentId] = previous ?? [login]
-                }
-                if let slug = reviewerJson.potentialString(named: "slug") {
-                    var previous = prIdsToAssignedTeams[parentId]
-                    previous?.insert(slug)
-                    prIdsToAssignedTeams[parentId] = previous ?? [slug]
-                }
+            if let login = reviewerJson.potentialString(named: "login") {
+                collector.add(login: login, for: parent)
+            }
+            if let slug = reviewerJson.potentialString(named: "slug") {
+                collector.add(teamSlug: slug, for: parent)
             }
         }
+    }
 
-        for node in nodes {
-            guard node.elementType == "ReviewRequest",
-                  let parentId = node.parent?.id,
-                  let parent = PullRequest.asParent(with: parentId, in: moc, parentCache: parentCache) else {
-                continue
-            }
-            parent.checkAndStoreReviewAssignments(prIdsToAssignedUsers[parentId] ?? [],
-                                                  prIdsToAssignedTeams[parentId] ?? [])
+    /** Applies the collected requests, which must hold every page, one time for each pull request. */
+    static func applyRequests(from collector: ReviewRequestCollector, myTeamSlugs: Set<String>, settings: Settings.Cache) {
+        for pr in collector.pullRequests {
+            pr.checkAndStoreReviewAssignments(collector.userLogins[pr] ?? [],
+                                              collector.teamSlugs[pr] ?? [],
+                                              myTeamSlugs: myTeamSlugs,
+                                              settings: settings)
         }
     }
 
@@ -93,6 +116,10 @@ final class Review: DataItem {
         let parentId = withParent.objectID
         let apiServerId = withParent.apiServer.objectID
         await v3items(with: data, type: Review.self, serverId: apiServerId, moc: moc) { item, info, isNewOrUpdated, syncMoc in
+            // checked every time, so that a row which predates this also gets the id
+            if let serverId = info.potentialInt(named: "id"), item.serverId != serverId {
+                item.serverId = serverId
+            }
             if isNewOrUpdated, let parent = try? syncMoc.existingObject(with: parentId) as? PullRequest {
                 item.pullRequest = parent
                 item.body = info.potentialString(named: "body")
@@ -127,7 +154,10 @@ final class Review: DataItem {
                 NotificationQueue.add(type: .changesApproved, for: self)
             }
         case .DISMISSED:
-            // A review holds its author, not whoever dismissed it, so a dismissal I make myself notifies too.
+            // a review holds its author, not whoever dismissed it, so the dismisser is recorded separately
+            if dismissedByMe {
+                return
+            }
             if isMine {
                 if settings.notifyOnMyReviewDismissals {
                     NotificationQueue.add(type: .myReviewDismissed, for: self)
@@ -138,17 +168,30 @@ final class Review: DataItem {
         }
     }
 
-    static func review(with id: Int, in moc: NSManagedObjectContext) -> Review? {
-        let f = NSFetchRequest<Review>(entityName: "Review")
+    /** A REST review id is unique to its server only, so the server is part of the match. */
+    static func reviews(with ids: [Int], on apiServerId: NSManagedObjectID, in moc: NSManagedObjectContext) -> [Review] {
+        if ids.isEmpty {
+            return []
+        }
+        let f = NSFetchRequest<Review>(entityName: typeName)
         f.returnsObjectsAsFaults = false
         f.includesSubentities = false
-        f.fetchLimit = 1
-        f.predicate = NSPredicate(format: "serverId == %d", id)
-        return try! moc.fetch(f).first
+        f.predicate = NSPredicate(format: "serverId IN %@ and apiServer == %@", ids, apiServerId)
+        return try! moc.fetch(f)
+    }
+
+    /** A REST review id is unique to its server only, so the server is part of the match. */
+    static func review(with id: Int, on apiServerId: NSManagedObjectID, in moc: NSManagedObjectContext) -> Review? {
+        reviews(with: [id], on: apiServerId, in: moc).first
     }
 
     var isMine: Bool {
         username == apiServer.userName
+    }
+
+    /** Whether I dismissed this review. A review with no recorded dismisser counts as somebody else's act. */
+    var dismissedByMe: Bool {
+        apiServer.isMe(dismisserName)
     }
 
     var affectsBottomLine: Bool {
