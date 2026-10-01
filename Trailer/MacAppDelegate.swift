@@ -8,7 +8,7 @@ enum Theme {
 }
 
 @main
-final class MacAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSUserNotificationCenterDelegate, NSOpenSavePanelDelegate, NSControlTextEditingDelegate {
+final class MacAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSOpenSavePanelDelegate, NSControlTextEditingDelegate {
     // Globals
     var refreshTask: Task<Void, Never>?
     var openingWindow = false

@@ -80,6 +80,9 @@ final class MenuWindow: NSWindow, NSControlTextEditingDelegate {
 
     func hideStatusItem() {
         if let s = statusItem {
+            if #available(macOS 27, *) {
+                s.expandedInterfaceSession?.cancel()
+            }
             s.statusBar?.removeStatusItem(s)
             statusItem = nil
         }
@@ -134,9 +137,15 @@ final class MenuWindow: NSWindow, NSControlTextEditingDelegate {
     }
 
     func size(andShow makeVisible: Bool) {
-        guard let statusItemButtonFrame = statusItem?.button?.window?.frame,
-              let currentScreen = NSScreen.screens.first(where: { $0.frame.contains(statusItemButtonFrame) })
-        else { return }
+        guard let statusItemWindow = statusItem?.button?.window,
+              let currentScreen = statusItemWindow.screen
+        else {
+            // End the session the click began, or the status item ignores every later click
+            if makeVisible, #available(macOS 27, *) {
+                statusItem?.expandedInterfaceSession?.cancel()
+            }
+            return
+        }
 
         let screenFrame = currentScreen.visibleFrame
 
@@ -169,7 +178,7 @@ final class MenuWindow: NSWindow, NSControlTextEditingDelegate {
             MENU_WIDTH
         }
 
-        var menuLeft = statusItemButtonFrame.origin.x
+        var menuLeft = statusItemWindow.frame.origin.x
         let rightSide = screenFrame.origin.x + screenFrame.width
         let overflow = (menuLeft + menuWidth) - rightSide
         if overflow > 0 {
@@ -186,7 +195,9 @@ final class MenuWindow: NSWindow, NSControlTextEditingDelegate {
         setFrame(CGRect(x: menuLeft, y: bottom, width: menuWidth, height: menuHeight), display: false, animate: false)
 
         if makeVisible {
-            statusItem?.button?.appearsDisabled = true
+            if #unavailable(macOS 27) {
+                statusItem?.button?.appearsDisabled = true
+            }
             table.deselectAll(nil)
             app.openingWindow = true
             level = .mainMenu
@@ -212,6 +223,10 @@ final class MenuWindow: NSWindow, NSControlTextEditingDelegate {
             app.refresh(menu: self)
             table.deselectAll(nil)
             orderOut(nil)
+            // After orderOut, so the did-end callback this triggers finds the window hidden and returns
+            if #available(macOS 27, *) {
+                statusItem?.expandedInterfaceSession?.cancel()
+            }
         }
     }
 
@@ -230,5 +245,16 @@ final class MenuWindow: NSWindow, NSControlTextEditingDelegate {
             }
         }
         return i
+    }
+}
+
+@available(macOS 27, *)
+extension MenuWindow: NSStatusItemExpandedInterfaceDelegate {
+    func statusItem(_: NSStatusItem, didBegin _: NSStatusItemExpandedInterfaceSession) {
+        app.show(menu: self)
+    }
+
+    func statusItemDidEndExpandedInterfaceSession(_: NSStatusItem, animated _: Bool) {
+        closeMenu()
     }
 }
