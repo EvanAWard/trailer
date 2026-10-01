@@ -137,9 +137,15 @@ final class MenuWindow: NSWindow, NSControlTextEditingDelegate {
     }
 
     func size(andShow makeVisible: Bool) {
-        guard let statusItemButtonFrame = statusItem?.button?.window?.frame,
-              let currentScreen = NSScreen.screens.first(where: { $0.frame.contains(statusItemButtonFrame) })
-        else { return }
+        guard let statusItemWindow = statusItem?.button?.window,
+              let currentScreen = statusItemWindow.screen
+        else {
+            // End the session the click began, or the status item ignores every later click
+            if makeVisible, #available(macOS 27, *) {
+                statusItem?.expandedInterfaceSession?.cancel()
+            }
+            return
+        }
 
         let screenFrame = currentScreen.visibleFrame
 
@@ -172,7 +178,7 @@ final class MenuWindow: NSWindow, NSControlTextEditingDelegate {
             MENU_WIDTH
         }
 
-        var menuLeft = statusItemButtonFrame.origin.x
+        var menuLeft = statusItemWindow.frame.origin.x
         let rightSide = screenFrame.origin.x + screenFrame.width
         let overflow = (menuLeft + menuWidth) - rightSide
         if overflow > 0 {
