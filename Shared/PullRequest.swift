@@ -118,18 +118,27 @@ final class PullRequest: ListableItem {
                 reviewRequests?.noteRequest(for: pr)
             }
 
+            // the mergeable step answers with no updatedAt too, and the other step payloads carry no
+            // mergeable field, so only a payload which has one may change the flag
+            if let mergeable = node.jsonPayload.potentialString(named: "mergeable") {
+                // the mergeable step carries no state, and it only asks about open pull requests
+                let isOpen = node.jsonPayload.potentialString(named: "state").map { $0 == "OPEN" } ?? true
+                if !isOpen || mergeable == "MERGEABLE" {
+                    pr.isMergeable = true
+                } else if mergeable == "CONFLICTING" {
+                    pr.isMergeable = false
+                } else if node.created(in: moc) {
+                    // GitHub has not worked it out yet, and a new row must not show a conflict it may not have
+                    pr.isMergeable = true
+                }
+            }
+
             guard node.created(in: moc) || node.updated(in: moc),
                   let parentId = node.parent?.id ?? node.jsonPayload.potentialObject(named: "repository")?.potentialString(named: "id"),
                   let parent = Repo.asParent(with: parentId, in: moc, parentCache: parentCache)
             else { return }
 
             let json = node.jsonPayload
-
-            if let mergeField = json.potentialString(named: "mergeable") {
-                pr.isMergeable = mergeField != "CONFLICTING"
-            } else {
-                pr.isMergeable = true
-            }
             pr.linesAdded = json.potentialInt(named: "additions") ?? 0
             pr.linesRemoved = json.potentialInt(named: "deletions") ?? 0
             pr.mergeCommitSha = json.potentialString(named: "headRefOid")
@@ -509,6 +518,32 @@ final class PullRequest: ListableItem {
                 NSPredicate(format: "changedFilePaths == nil"),
                 PostSyncAction.isNew.matchingPredicate,
                 PostSyncAction.isUpdated.matchingPredicate
+            ])
+        ])
+        return try! moc.fetch(f)
+    }
+
+    /**
+     The open pull requests whose mergeable state the sync asks for again. A base branch can move
+     without changing a pull request's updatedAt, so the regular fetch alone would miss a new conflict.
+     A row which is flagged for deletion stays out, because the fetch clears that flag and the row would
+     then survive the pass.
+
+     Hidden pull requests stay out, because the conflict tag only shows on listed items. A pull request
+     created in this pass is the exception: its section is not computed until the sync ends, and a second
+     ask often resolves the unknown answer GitHub gave the first time.
+     */
+    static func mergeableCheckBatch(in moc: NSManagedObjectContext) -> [PullRequest] {
+        let f = NSFetchRequest<PullRequest>(entityName: "PullRequest")
+        f.returnsObjectsAsFaults = false
+        f.includesSubentities = false
+        f.predicate = NSCompoundPredicate(type: .and, subpredicates: [
+            ItemCondition.open.matchingPredicate,
+            ApiServer.lastSyncSucceededPredicate,
+            PostSyncAction.delete.excludingPredicate,
+            NSCompoundPredicate(type: .or, subpredicates: [
+                Section.nonZeroPredicate,
+                PostSyncAction.isNew.matchingPredicate
             ])
         ])
         return try! moc.fetch(f)
