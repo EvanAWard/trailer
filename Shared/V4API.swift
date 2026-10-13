@@ -34,6 +34,7 @@ extension API {
         static let filePaths = SyncSteps(rawValue: 1 << 5)
         static let reviewDismissers = SyncSteps(rawValue: 1 << 6)
         static let reviewRequesters = SyncSteps(rawValue: 1 << 7)
+        static let mergeable = SyncSteps(rawValue: 1 << 8)
 
         var toString: String {
             var ret = [String]()
@@ -45,6 +46,7 @@ extension API {
             if contains(.filePaths) { ret.append("File Paths") }
             if contains(.reviewDismissers) { ret.append("Review Dismissers") }
             if contains(.reviewRequesters) { ret.append("Review Requesters") }
+            if contains(.mergeable) { ret.append("Mergeable") }
             return ret.joined(separator: ", ")
         }
     }
@@ -132,6 +134,12 @@ extension API {
                 for pr in PullRequest.itemsHoldingChangedPaths(in: moc) {
                     pr.changedFilePaths = nil
                 }
+            }
+
+            if settings.markUnmergeablePrs {
+                let mergeablePrs = PullRequest.mergeableCheckBatch(in: moc)
+                try await GraphQL.update(for: mergeablePrs, steps: [.mergeable], settings: settings)
+                await Logging.shared.log("PR mergeable fetch phase complete")
             }
         }
 

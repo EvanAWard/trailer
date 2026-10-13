@@ -548,6 +548,10 @@ enum GraphQL {
                             Field("path")
                         }
                     }
+
+                    if steps.contains(.mergeable) {
+                        Field("mergeable")
+                    }
                 }
 
                 if steps.contains(.reactions) {
