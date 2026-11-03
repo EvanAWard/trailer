@@ -456,7 +456,7 @@ class ListableItem: DataItem, Listable {
         wasAwokenFromSnooze = explicityAwoke
     }
 
-    var preferredSectionBasedOnReviewAssignment: Section? {
+    func preferredSectionBasedOnReviewAssignment(settings _: Settings.Cache) -> Section? {
         nil
     }
 
@@ -510,7 +510,7 @@ class ListableItem: DataItem, Listable {
 
         if let potentialSection = settings.preferredTeamMentionPolicy,
            potentialSection.sectionIndex < targetSection.sectionIndex,
-           contains(terms: apiServer.teams.compactMap(\.calculatedReferral)) {
+           contains(terms: apiServer.attendedTeams(settings: settings).compactMap(\.calculatedReferral)) {
             targetSection = potentialSection
         }
 
@@ -520,7 +520,7 @@ class ListableItem: DataItem, Listable {
             targetSection = potentialSection
         }
 
-        if let potentialSection = preferredSectionBasedOnReviewAssignment,
+        if let potentialSection = preferredSectionBasedOnReviewAssignment(settings: settings),
            potentialSection.sectionIndex < targetSection.sectionIndex {
             targetSection = potentialSection
         }

@@ -128,6 +128,9 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     @IBOutlet private var pathFilterList: NSTokenField!
     @IBOutlet private var pathFilterMovePolicy: NSPopUpButton!
     @IBOutlet private var pathFilterOverridesRepoPolicy: NSButton!
+
+    // Teams
+    @IBOutlet private var ignoredTeamsList: NSTokenField!
     @IBOutlet private var pathFilterNote: NSTextField!
 
     // Display
@@ -773,6 +776,9 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
 
         labelBlacklist.objectValue = Settings.labelBlacklist
         labelBlacklistMode.selectItem(at: Settings.labelsIncludionRule.rawValue)
+
+        ignoredTeamsList.objectValue = Settings.ignoredTeams
+        ignoredTeamsList.toolTip = Settings.ignoredTeamsHelp
 
         itemAuthorBlacklist.objectValue = Settings.itemAuthorBlacklist
         itemAuthorBlacklistMode.selectItem(at: Settings.authorsIncludionRule.rawValue)
@@ -1876,6 +1882,13 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
                 Settings.pathFilterList = newTokens
                 deferredUpdateTimer.push()
                 updatePathFilterNote()
+            }
+
+        } else if obj === ignoredTeamsList {
+            let newTokens = ignoredTeamsList.objectValue as! [String]
+            if Settings.ignoredTeams != newTokens {
+                Settings.ignoredTeams = newTokens
+                deferredUpdateTimer.push()
             }
         }
     }

@@ -233,7 +233,13 @@ final class PullRequest: ListableItem {
         reviews.contains { $0.isMine }
     }
 
-    override var preferredSectionBasedOnReviewAssignment: Section? {
+    /** Whether a stored team review request names one of my teams which the settings do not ignore. */
+    private func requestsReviewFromAttendedTeam(settings: Settings.Cache) -> Bool {
+        let requestedSlugs = Set(teamReviewers.split(separator: ",").map(String.init))
+        return !requestedSlugs.isDisjoint(with: apiServer.attendedTeamSlugs(settings: settings))
+    }
+
+    override func preferredSectionBasedOnReviewAssignment(settings: Settings.Cache) -> Section? {
         switch AssignmentStatus(rawValue: assignedReviewStatus) {
         case nil, .none?, .others:
             break
@@ -245,7 +251,8 @@ final class PullRequest: ListableItem {
             }
 
         case .myTeam:
-            if Settings.assignedTeamReviewHandlingPolicy.visible,
+            if requestsReviewFromAttendedTeam(settings: settings),
+               Settings.assignedTeamReviewHandlingPolicy.visible,
                let section = Settings.assignedTeamReviewHandlingPolicy.preferredSection {
                 return section.visible ? section : .hidden(cause: .assignedTeamReview)
             }
@@ -320,7 +327,7 @@ final class PullRequest: ListableItem {
                 NotificationQueue.add(type: .assignedForReview, for: self)
             }
         case .myTeam:
-            if !teamReviewRequestedByMe {
+            if !teamReviewRequestedByMe, requestsReviewFromAttendedTeam(settings: settings) {
                 NotificationQueue.add(type: .assignedToTeamForReview, for: self)
             }
         }

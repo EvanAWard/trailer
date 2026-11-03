@@ -31,6 +31,16 @@ final class ApiServer: NSManagedObject {
         Set(teams.compactMap(\.slug))
     }
 
+    /** The teams I belong to on this server, leaving out the ones the settings ignore. */
+    func attendedTeams(settings: Settings.Cache) -> [Team] {
+        teams.filter { !$0.isIgnored(by: settings.ignoredTeams) }
+    }
+
+    /** The slugs of the teams I belong to on this server, leaving out the ones the settings ignore. */
+    func attendedTeamSlugs(settings: Settings.Cache) -> Set<String> {
+        Set(attendedTeams(settings: settings).compactMap(\.slug))
+    }
+
     /** Whether this login is mine. An unknown login, or an unknown user name, is not me. */
     func isMe(_ login: String?) -> Bool {
         guard let login, let userName else { return false }
