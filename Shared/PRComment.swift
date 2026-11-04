@@ -100,7 +100,7 @@ final class PRComment: DataItem {
 
         let parentNodeId = parent.nodeId ?? "<no ID>"
 
-        let isMention = contains(terms: ["@\(apiServer.userName!)"])
+        let isMention = contains(terms: ["@\(apiServer.userName!)"], matching: .substring)
         if isMention {
             if parent.isSnoozing, parent.shouldWakeOnMention {
                 Task {
@@ -230,11 +230,12 @@ final class PRComment: DataItem {
         userNodeId == apiServer.userNodeId
     }
 
-    final func contains(terms: [String]) -> Bool {
-        if let body {
-            return terms.contains(where: { !$0.isEmpty && body.localizedCaseInsensitiveContains($0) })
+    /** Whether the body holds one of the terms. */
+    final func contains(terms: [String], matching: TermMatching) -> Bool {
+        guard let body else {
+            return false
         }
-        return false
+        return terms.contains { matching.finds($0, in: body) }
     }
 
     override var asComment: PRComment? {

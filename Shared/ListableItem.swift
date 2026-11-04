@@ -360,11 +360,15 @@ class ListableItem: DataItem, Listable {
         userNodeId == apiServer.userNodeId
     }
 
-    private final func contains(terms: [String]) -> Bool {
-        if let body, terms.contains(where: { !$0.isEmpty && body.localizedCaseInsensitiveContains($0) }) {
+    /** Whether the body or a comment holds one of the terms. */
+    private final func contains(terms: [String], matching: TermMatching) -> Bool {
+        if terms.isEmpty {
+            return false
+        }
+        if let body, terms.contains(where: { matching.finds($0, in: body) }) {
             return true
         }
-        return comments.contains(where: { $0.contains(terms: terms) })
+        return comments.contains(where: { $0.contains(terms: terms, matching: matching) })
     }
 
     private final var commentedByMe: Bool {
@@ -504,13 +508,13 @@ class ListableItem: DataItem, Listable {
 
         if let potentialSection = settings.preferredMovePolicySection,
            potentialSection.sectionIndex < targetSection.sectionIndex,
-           contains(terms: ["@\(apiServer.userName.orEmpty)"]) {
+           contains(terms: ["@\(apiServer.userName.orEmpty)"], matching: .substring) {
             targetSection = potentialSection
         }
 
         if let potentialSection = settings.preferredTeamMentionPolicy,
            potentialSection.sectionIndex < targetSection.sectionIndex,
-           contains(terms: apiServer.attendedTeams(settings: settings).compactMap(\.calculatedReferral)) {
+           contains(terms: apiServer.attendedTeams(settings: settings).compactMap(\.calculatedReferral), matching: .wholeReferral) {
             targetSection = potentialSection
         }
 

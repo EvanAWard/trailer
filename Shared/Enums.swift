@@ -426,4 +426,43 @@ extension String {
     var comparableForm: String {
         folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
     }
+
+    /**
+     Whether the text holds the referral, ignoring case, as a whole: the character after it may not be
+     one that a login or slug can contain. So `@org/platform` is not found in `@org/platform-ops`.
+     */
+    func containsWholeReferral(_ referral: String) -> Bool {
+        guard !referral.isEmpty else {
+            return false
+        }
+        var searchRange = startIndex ..< endIndex
+        while let found = range(of: referral, options: .caseInsensitive, range: searchRange, locale: .current) {
+            if found.upperBound == endIndex || !Self.continuesReferral(self[found.upperBound]) {
+                return true
+            }
+            searchRange = index(after: found.lowerBound) ..< endIndex
+        }
+        return false
+    }
+
+    private static func continuesReferral(_ character: Character) -> Bool {
+        character.isLetter || character.isNumber || character == "-" || character == "_"
+    }
+}
+
+/** How a search term is found in a text. An empty term is never found. */
+enum TermMatching {
+    /** The term may appear anywhere, ignoring case, even inside a longer word. */
+    case substring
+    /** The term must appear as a whole referral, so `@org/platform` is not found in `@org/platform-ops`. */
+    case wholeReferral
+
+    func finds(_ term: String, in text: String) -> Bool {
+        switch self {
+        case .substring:
+            !term.isEmpty && text.localizedCaseInsensitiveContains(term)
+        case .wholeReferral:
+            text.containsWholeReferral(term)
+        }
+    }
 }
