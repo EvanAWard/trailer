@@ -20,8 +20,8 @@ final class Team: DataItem {
     }
 
     /**
-     Turns ignored-team entries into the form that `isIgnored(by:)` checks: trimmed, lowercased, and
-     without a leading `@`. Blank entries are dropped.
+     Turns ignored-team entries into the form that `isIgnored(by:)` checks: trimmed, in `comparableForm`,
+     and without a leading `@`. Blank entries are dropped.
      */
     static func normalizedIgnoreEntries(_ entries: [String]) -> Set<String> {
         Set(entries.compactMap { entry in
@@ -29,20 +29,20 @@ final class Team: DataItem {
             if normalized.hasPrefix("@") {
                 normalized.removeFirst()
             }
-            normalized = normalized.lowercased()
+            normalized = normalized.comparableForm
             return normalized.isEmpty ? nil : normalized
         })
     }
 
     /** Whether one of the normalised entries names this team, either by slug alone or as `org/slug`. */
     func isIgnored(by entries: Set<String>) -> Bool {
-        guard !entries.isEmpty, let slug = slug?.lowercased(), !slug.isEmpty else {
+        guard !entries.isEmpty, let slug = slug?.comparableForm, !slug.isEmpty else {
             return false
         }
         if entries.contains(slug) {
             return true
         }
-        guard let org = organisationLogin?.lowercased(), !org.isEmpty else {
+        guard let org = organisationLogin?.comparableForm, !org.isEmpty else {
             return false
         }
         return entries.contains("\(org)/\(slug)")
