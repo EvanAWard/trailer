@@ -1105,7 +1105,7 @@ enum GraphQL {
         }
 
         private func applyPendingReviewRequests() {
-            Review.applyRequests(from: reviewRequestCollector, myTeamSlugs: scannerServer.myTeamSlugs, settings: scannerSettings)
+            Review.applyRequests(from: reviewRequestCollector, settings: scannerSettings)
         }
 
         /** Writes the dismisser of each collected event whose review row exists. */
@@ -1122,11 +1122,11 @@ enum GraphQL {
         }
 
         /**
-         Records who asked me, or one of my teams, for a review, filed by the kind of request it made. A
+         Records who asked me, or one of the teams I attend, for a review, filed by the kind of request it made. A
          request which names somebody else is dropped, because only my own assignment raises a notification.
          */
         private func storeReviewRequesters(from nodeList: Lista<Node>) {
-            let myTeams = scannerServer.myTeamSlugs
+            let attendedSlugs = scannerServer.attendedTeamSlugs(settings: scannerSettings)
 
             for node in nodeList {
                 guard let parentId = node.parent?.id,
@@ -1136,7 +1136,7 @@ enum GraphQL {
                 }
 
                 let namesMe = scannerServer.isMe(reviewer.potentialString(named: "login"))
-                let namesMyTeam = reviewer.potentialString(named: "slug").map(myTeams.contains) ?? false
+                let namesMyTeam = reviewer.potentialString(named: "slug").map(attendedSlugs.contains) ?? false
 
                 guard namesMe || namesMyTeam,
                       let pr = PullRequest.asParent(with: parentId, in: scannerMoc, parentCache: parentCache) else {

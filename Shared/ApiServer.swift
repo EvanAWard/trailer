@@ -36,7 +36,10 @@ final class ApiServer: NSManagedObject {
         teams.filter { !$0.isIgnored(by: settings.ignoredTeams) }
     }
 
-    /** The slugs of the teams I belong to on this server, leaving out the ones the settings ignore. */
+    /**
+     The slugs of the teams I attend on this server. A review request or a team assignment is matched
+     against them on the slug alone, so a team of another organisation that has the same slug also counts.
+     */
     func attendedTeamSlugs(settings: Settings.Cache) -> Set<String> {
         Set(attendedTeams(settings: settings).compactMap(\.slug))
     }

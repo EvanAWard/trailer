@@ -106,7 +106,8 @@ extension API {
     @MainActor
     private struct ReviewActorScan {
         let apiServer: ApiServer
-        let myTeamSlugs: Set<String>
+        /** The slugs of the teams I attend on the server. */
+        let attendedTeamSlugs: Set<String>
         let prsByNumber: [Int: PullRequest]
         let collectDismissers: Bool
         let collectRequesters: Bool
@@ -114,7 +115,7 @@ extension API {
 
         /**
          Reads one issue event and keeps it when it names a review actor. A review request is applied at
-         once, and only when it names me or one of my teams, and is filed by the kind of request it made.
+         once, and only when it names me or one of the teams I attend, and is filed by the kind of request it made.
          Any other event is ignored.
          */
         func read(_ event: TypedJson.Entry, named name: String) {
@@ -139,7 +140,7 @@ extension API {
                         collector.setRequester(actor, on: pr, kind: .personal)
                     }
                 } else if let slug = event.potentialObject(named: "requested_team")?.potentialString(named: "slug"),
-                          myTeamSlugs.contains(slug),
+                          attendedTeamSlugs.contains(slug),
                           let pr = prsByNumber[issueNumber] {
                     collector.setRequester(actor, on: pr, kind: .team)
                 }
@@ -167,7 +168,7 @@ extension API {
                     // only the requester arm reads the teams and the pull requests, so the dismisser arm faults neither
                     let scan: ReviewActorScan? = if collectActors {
                         ReviewActorScan(apiServer: apiServer,
-                                        myTeamSlugs: collectRequesters ? apiServer.myTeamSlugs : [],
+                                        attendedTeamSlugs: collectRequesters ? apiServer.attendedTeamSlugs(settings: settings) : [],
                                         prsByNumber: collectRequesters ? Dictionary(r.pullRequests.map { ($0.number, $0) }, uniquingKeysWith: { first, _ in first }) : [:],
                                         collectDismissers: collectDismissers,
                                         collectRequesters: collectRequesters,
@@ -586,7 +587,7 @@ extension API {
                         for userName in userList.compactMap({ $0.potentialString(named: "login") }) {
                             reviewUsers.insert(userName)
                         }
-                        p.checkAndStoreReviewAssignments(reviewUsers, reviewTeams, myTeamSlugs: p.apiServer.myTeamSlugs, settings: settings)
+                        p.checkAndStoreReviewAssignments(reviewUsers, reviewTeams, settings: settings)
 
                     } else if let data, let userList = data.potentialArray(named: "users"), let teamList = data.potentialArray(named: "teams") {
                         // New API results
@@ -596,7 +597,7 @@ extension API {
                         for teamName in teamList.compactMap({ $0.potentialString(named: "slug") }) {
                             reviewTeams.insert(teamName)
                         }
-                        p.checkAndStoreReviewAssignments(reviewUsers, reviewTeams, myTeamSlugs: p.apiServer.myTeamSlugs, settings: settings)
+                        p.checkAndStoreReviewAssignments(reviewUsers, reviewTeams, settings: settings)
 
                     } else {
                         p.apiServer.lastSyncSucceeded = false
