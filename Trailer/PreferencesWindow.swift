@@ -107,6 +107,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     @IBOutlet private var itemAuthorBlacklistMode: NSPopUpButton!
     @IBOutlet private var labelBlacklist: NSTokenField!
     @IBOutlet private var labelBlacklistMode: NSPopUpButton!
+    @IBOutlet private var ignoredTeamsList: NSTokenField!
 
     // Comments
     @IBOutlet private var disableAllCommentNotifications: NSButton!
@@ -128,9 +129,6 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     @IBOutlet private var pathFilterList: NSTokenField!
     @IBOutlet private var pathFilterMovePolicy: NSPopUpButton!
     @IBOutlet private var pathFilterOverridesRepoPolicy: NSButton!
-
-    // Teams
-    @IBOutlet private var ignoredTeamsList: NSTokenField!
     @IBOutlet private var pathFilterNote: NSTextField!
 
     // Display
