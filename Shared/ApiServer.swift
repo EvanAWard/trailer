@@ -26,11 +26,6 @@ final class ApiServer: NSManagedObject {
     @NSManaged var reviews: Set<Review>
     @NSManaged var reactions: Set<Reaction>
 
-    /** The slugs of every team I belong to on this server. */
-    var myTeamSlugs: Set<String> {
-        Set(teams.compactMap(\.slug))
-    }
-
     /** The teams I belong to on this server, leaving out the ones the settings ignore. */
     func attendedTeams(settings: Settings.Cache) -> [Team] {
         teams.filter { !$0.isIgnored(by: settings.ignoredTeams) }

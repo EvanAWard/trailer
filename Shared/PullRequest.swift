@@ -104,7 +104,7 @@ final class PullRequest: ListableItem {
         }
     }
 
-    static func sync(from nodes: Lista<Node>, on server: ApiServer, moc: NSManagedObjectContext, parentCache: FetchCache, filePaths: FilePathCollector? = nil, reviewRequests: ReviewRequestCollector? = nil) {
+    static func sync(from nodes: Lista<Node>, on server: ApiServer, moc: NSManagedObjectContext, parentCache: FetchCache, settings: Settings.Cache, filePaths: FilePathCollector? = nil, reviewRequests: ReviewRequestCollector? = nil) {
         syncItems(of: PullRequest.self, from: nodes, on: server, moc: moc, parentCache: parentCache) { pr, node in
             // the file path step answers with no updatedAt, so its payload has to be read above the guard below
             if let files = node.jsonPayload.potentialObject(named: "files") {
@@ -143,7 +143,7 @@ final class PullRequest: ListableItem {
             pr.linesRemoved = json.potentialInt(named: "deletions") ?? 0
             pr.mergeCommitSha = json.potentialString(named: "headRefOid")
             pr.mergedByNodeId = json.potentialObject(named: "mergedBy")?.potentialString(named: "id")
-            pr.baseNodeSync(node: node, parent: parent)
+            pr.baseNodeSync(node: node, parent: parent, settings: settings)
             pr.reviewers = "" // will be populated by the review request API calls
             pr.teamReviewers = "" // will be populated by the review request API calls
 
@@ -183,14 +183,14 @@ final class PullRequest: ListableItem {
     }
 
     @MainActor
-    static func syncPullRequests(from data: [TypedJson.Entry]?, in repo: Repo, moc: NSManagedObjectContext) async {
+    static func syncPullRequests(from data: [TypedJson.Entry]?, in repo: Repo, moc: NSManagedObjectContext, settings: Settings.Cache) async {
         let apiServer = repo.apiServer
         let apiServerUserId = apiServer.userNodeId
         let repoId = repo.objectID
         await v3items(with: data, type: PullRequest.self, serverId: apiServer.objectID, moc: moc) { item, info, isNewOrUpdated, syncMoc in
             if isNewOrUpdated {
                 let repo = try! syncMoc.existingObject(with: repoId) as! Repo
-                item.baseSync(from: info, in: repo)
+                item.baseSync(from: info, in: repo, settings: settings)
 
                 let baseInfo = info.potentialObject(named: "base")
                 item.baseLabel = baseInfo?.potentialString(named: "label")

@@ -1173,10 +1173,10 @@ enum GraphQL {
                 Repo.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache)
             }
             if let nodeList = nodes["Issue"] {
-                Issue.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache)
+                Issue.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache, settings: scannerSettings)
             }
             if let nodeList = nodes["PullRequest"] {
-                PullRequest.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache, filePaths: filePathCollector, reviewRequests: reviewRequestCollector)
+                PullRequest.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache, settings: scannerSettings, filePaths: filePathCollector, reviewRequests: reviewRequestCollector)
             }
             if let nodeList = nodes["Label"] {
                 PRLabel.sync(from: nodeList, on: scannerServer, moc: scannerMoc, parentCache: parentCache)

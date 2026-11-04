@@ -102,7 +102,7 @@ class ListableItem: DataItem, Listable {
 
     func handleMerging(settings _: Settings.Cache) {}
 
-    final func baseNodeSync(node: Node, parent: Repo) {
+    final func baseNodeSync(node: Node, parent: Repo, settings: Settings.Cache) {
         repo = parent
 
         let info = node.jsonPayload
@@ -144,14 +144,14 @@ class ListableItem: DataItem, Listable {
             []
         }
 
-        processAssignmentStatus(from: .object(["assignees": .array(i)]), idField: "id")
+        processAssignmentStatus(from: .object(["assignees": .array(i)]), idField: "id", settings: settings)
 
         if node.updated(in: managedObjectContext!) {
             labels.removeAll() // so not set delete post sync action, as label may not just be a child to this item. Orphaned labels are nuked afterwards
         }
     }
 
-    final func baseSync(from info: TypedJson.Entry, in parentRepo: Repo) {
+    final func baseSync(from info: TypedJson.Entry, in parentRepo: Repo, settings: Settings.Cache) {
         repo = parentRepo
         url = info.potentialString(named: "url")
         number = info.potentialInt(named: "number") ?? 0
@@ -166,10 +166,10 @@ class ListableItem: DataItem, Listable {
             userNodeId = userInfo.potentialString(named: "node_id")
         }
 
-        processAssignmentStatus(from: info, idField: "node_id")
+        processAssignmentStatus(from: info, idField: "node_id", settings: settings)
     }
 
-    final func processAssignmentStatus(from info: TypedJson.Entry?, idField: String) {
+    final func processAssignmentStatus(from info: TypedJson.Entry?, idField: String, settings: Settings.Cache) {
         let assigneeJson: [TypedJson.Entry]? = if let assignees = info?.potentialArray(named: "assignees") {
             assignees
         } else if let assignee = info?.potentialObject(named: "assignee") {
@@ -185,7 +185,8 @@ class ListableItem: DataItem, Listable {
 
         if let assigneeJson, !assigneeJson.isEmpty {
             let myIdOnThisRepo = repo.apiServer.userNodeId
-            let myTeamNames = apiServer.myTeamSlugs
+            // GitHub rarely sends a team assignee, so the attended teams are only worked out for one
+            var attendedSlugs: Set<String>?
 
             for assignee in assigneeJson {
                 if let name = assignee.potentialString(named: "login"), let assigneeId = assignee.potentialString(named: idField) {
@@ -194,8 +195,10 @@ class ListableItem: DataItem, Listable {
                     }
                     directAssigneeNames.append(name)
                 } else if let name = assignee.potentialString(named: "slug") {
-                    if !teamAssignmentToMe, myTeamNames.contains(name) {
-                        teamAssignmentToMe = true
+                    if !teamAssignmentToMe {
+                        let slugs = attendedSlugs ?? apiServer.attendedTeamSlugs(settings: settings)
+                        attendedSlugs = slugs
+                        teamAssignmentToMe = slugs.contains(name)
                     }
                     teamAssigneeNames.append(name)
                 }

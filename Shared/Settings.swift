@@ -598,7 +598,7 @@ enum Settings {
 
     @UserDefault(key: "IGNORED_TEAMS", defaultValue: [String]())
     static var ignoredTeams: [String]
-    static let ignoredTeamsHelp = "Treat these teams as if you were not a member. A review request for an ignored team, or a mention of it, does not move an item or raise a notification. An entry is a team slug, such as \"platform\", or an organisation and slug, such as \"my-org/platform\". Case does not matter, and a leading @ is allowed."
+    static let ignoredTeamsHelp = "Treat these teams as if you were not a member. A review request, assignment or mention for an ignored team does not move an item or raise a notification. An entry is a team slug, such as \"platform\", or an organisation and slug, such as \"my-org/platform\". Case does not matter, and a leading @ is allowed. Review requests and assignments are matched on the slug alone, so an organisation and slug entry does not stop them while you belong to a team with the same slug in another organisation."
 
     /**
      Hiding policies per repository, keyed by repository node ID, holding raw `RepoHidingPolicy`

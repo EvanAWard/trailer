@@ -63,7 +63,7 @@ extension API {
         }
     }
 
-    private static func fetchItems(for repos: [Repo], in moc: NSManagedObjectContext) async {
+    private static func fetchItems(for repos: [Repo], in moc: NSManagedObjectContext, settings: Settings.Cache) async {
         for r in repos {
             for p in r.pullRequests where p.condition == ItemCondition.open.rawValue {
                 p.postSyncAction = PostSyncAction.delete.rawValue
@@ -81,7 +81,7 @@ extension API {
                     let repoFullName = r.fullName.orEmpty
                     group.addTask {
                         let result = await RestAccess.getPagedData(at: "/repos/\(repoFullName)/pulls", from: apiServer) { data, _ in
-                            await PullRequest.syncPullRequests(from: data, in: r, moc: moc)
+                            await PullRequest.syncPullRequests(from: data, in: r, moc: moc, settings: settings)
                             return false
                         }
                         await handleRepoSync(for: r, result: result)
@@ -92,7 +92,7 @@ extension API {
                     let repoFullName = r.fullName.orEmpty
                     group.addTask {
                         let result = await RestAccess.getPagedData(at: "/repos/\(repoFullName)/issues", from: apiServer) { data, _ in
-                            await Issue.syncIssues(from: data, in: r, moc: moc)
+                            await Issue.syncIssues(from: data, in: r, moc: moc, settings: settings)
                             return false
                         }
                         await handleRepoSync(for: r, result: result)
@@ -237,7 +237,7 @@ extension API {
     }
 
     static func v3Sync(_ repos: [Repo], to moc: NSManagedObjectContext, settings: Settings.Cache) async {
-        await fetchItems(for: repos, in: moc)
+        await fetchItems(for: repos, in: moc, settings: settings)
         let reposWithSomeItems = repos.filter { !$0.issues.isEmpty || !$0.pullRequests.isEmpty }
         let reviewActors = await markExtraUpdatedItems(from: reposWithSomeItems, settings: settings)
         let newOrUpdatedPrs = PullRequest.newOrUpdatedItems(in: moc, fromSuccessfulSyncOnly: true)
@@ -287,7 +287,7 @@ extension API {
             }
 
             group.addTask {
-                await detectAssignedPullRequests(for: newOrUpdatedPrs)
+                await detectAssignedPullRequests(for: newOrUpdatedPrs, settings: settings)
             }
 
             if settings.shouldSyncReviewAssignments {
@@ -708,7 +708,7 @@ extension API {
         }
     }
 
-    private static func detectAssignedPullRequests(for prs: [PullRequest]) async {
+    private static func detectAssignedPullRequests(for prs: [PullRequest], settings: Settings.Cache) async {
         await withTaskGroup { group in
             for p in prs {
                 let apiServer = p.apiServer
@@ -717,7 +717,7 @@ extension API {
                         do {
                             let (data, _, _) = try await RestAccess.getData(in: issueLink, from: apiServer)
                             if let data {
-                                p.processAssignmentStatus(from: data, idField: "node_id")
+                                p.processAssignmentStatus(from: data, idField: "node_id", settings: settings)
                             }
                         } catch {
                             apiServer.lastSyncSucceeded = false
