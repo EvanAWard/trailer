@@ -112,6 +112,8 @@ enum Settings {
         let useV4API = Settings.useV4API
         let assignedItemDirectHandlingPolicy = Settings.assignedItemDirectHandlingPolicy
         let assignedItemTeamHandlingPolicy = Settings.assignedItemTeamHandlingPolicy
+        let assignedDirectReviewHandlingPolicy = Settings.assignedDirectReviewHandlingPolicy
+        let assignedTeamReviewHandlingPolicy = Settings.assignedTeamReviewHandlingPolicy
         let notifyOnAllReviewChangeRequests = Settings.notifyOnAllReviewChangeRequests
         let notifyOnAllReviewAcceptances = Settings.notifyOnAllReviewAcceptances
         let notifyOnAllReviewDismissals = Settings.notifyOnAllReviewDismissals

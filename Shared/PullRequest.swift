@@ -245,15 +245,15 @@ final class PullRequest: ListableItem {
             break
 
         case .me:
-            if Settings.assignedDirectReviewHandlingPolicy.visible,
-               let section = Settings.assignedDirectReviewHandlingPolicy.preferredSection {
+            if settings.assignedDirectReviewHandlingPolicy.visible,
+               let section = settings.assignedDirectReviewHandlingPolicy.preferredSection {
                 return section.visible ? section : .hidden(cause: .assignedDirectReview)
             }
 
         case .myTeam:
             if requestsReviewFromAttendedTeam(settings: settings),
-               Settings.assignedTeamReviewHandlingPolicy.visible,
-               let section = Settings.assignedTeamReviewHandlingPolicy.preferredSection {
+               settings.assignedTeamReviewHandlingPolicy.visible,
+               let section = settings.assignedTeamReviewHandlingPolicy.preferredSection {
                 return section.visible ? section : .hidden(cause: .assignedTeamReview)
             }
         }
