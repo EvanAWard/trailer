@@ -19,6 +19,35 @@ final class Team: DataItem {
         return try? moc.fetch(f).first
     }
 
+    /**
+     Turns ignored-team entries into the form that `isIgnored(by:)` checks: trimmed, in `comparableForm`,
+     and without a leading `@`. Blank entries are dropped.
+     */
+    static func normalizedIgnoreEntries(_ entries: [String]) -> Set<String> {
+        Set(entries.compactMap { entry in
+            var normalized = entry.trimmingCharacters(in: .whitespacesAndNewlines)
+            if normalized.hasPrefix("@") {
+                normalized.removeFirst()
+            }
+            normalized = normalized.comparableForm
+            return normalized.isEmpty ? nil : normalized
+        })
+    }
+
+    /** Whether one of the normalised entries names this team, either by slug alone or as `org/slug`. */
+    func isIgnored(by entries: Set<String>) -> Bool {
+        guard !entries.isEmpty, let slug = slug?.comparableForm, !slug.isEmpty else {
+            return false
+        }
+        if entries.contains(slug) {
+            return true
+        }
+        guard let org = organisationLogin?.comparableForm, !org.isEmpty else {
+            return false
+        }
+        return entries.contains("\(org)/\(slug)")
+    }
+
     static func syncTeams(from data: [TypedJson.Entry]?, serverId: NSManagedObjectID, moc: NSManagedObjectContext) async {
         await v3items(with: data, type: Team.self, serverId: serverId, moc: moc) { item, info, _, _ in
             let slug = info.potentialString(named: "slug").orEmpty

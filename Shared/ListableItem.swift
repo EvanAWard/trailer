@@ -102,7 +102,7 @@ class ListableItem: DataItem, Listable {
 
     func handleMerging(settings _: Settings.Cache) {}
 
-    final func baseNodeSync(node: Node, parent: Repo) {
+    final func baseNodeSync(node: Node, parent: Repo, settings: Settings.Cache) {
         repo = parent
 
         let info = node.jsonPayload
@@ -144,14 +144,14 @@ class ListableItem: DataItem, Listable {
             []
         }
 
-        processAssignmentStatus(from: .object(["assignees": .array(i)]), idField: "id")
+        processAssignmentStatus(from: .object(["assignees": .array(i)]), idField: "id", settings: settings)
 
         if node.updated(in: managedObjectContext!) {
             labels.removeAll() // so not set delete post sync action, as label may not just be a child to this item. Orphaned labels are nuked afterwards
         }
     }
 
-    final func baseSync(from info: TypedJson.Entry, in parentRepo: Repo) {
+    final func baseSync(from info: TypedJson.Entry, in parentRepo: Repo, settings: Settings.Cache) {
         repo = parentRepo
         url = info.potentialString(named: "url")
         number = info.potentialInt(named: "number") ?? 0
@@ -166,10 +166,10 @@ class ListableItem: DataItem, Listable {
             userNodeId = userInfo.potentialString(named: "node_id")
         }
 
-        processAssignmentStatus(from: info, idField: "node_id")
+        processAssignmentStatus(from: info, idField: "node_id", settings: settings)
     }
 
-    final func processAssignmentStatus(from info: TypedJson.Entry?, idField: String) {
+    final func processAssignmentStatus(from info: TypedJson.Entry?, idField: String, settings: Settings.Cache) {
         let assigneeJson: [TypedJson.Entry]? = if let assignees = info?.potentialArray(named: "assignees") {
             assignees
         } else if let assignee = info?.potentialObject(named: "assignee") {
@@ -185,7 +185,8 @@ class ListableItem: DataItem, Listable {
 
         if let assigneeJson, !assigneeJson.isEmpty {
             let myIdOnThisRepo = repo.apiServer.userNodeId
-            let myTeamNames = apiServer.myTeamSlugs
+            // GitHub rarely sends a team assignee, so the attended teams are only worked out for one
+            var attendedSlugs: Set<String>?
 
             for assignee in assigneeJson {
                 if let name = assignee.potentialString(named: "login"), let assigneeId = assignee.potentialString(named: idField) {
@@ -194,8 +195,10 @@ class ListableItem: DataItem, Listable {
                     }
                     directAssigneeNames.append(name)
                 } else if let name = assignee.potentialString(named: "slug") {
-                    if !teamAssignmentToMe, myTeamNames.contains(name) {
-                        teamAssignmentToMe = true
+                    if !teamAssignmentToMe {
+                        let slugs = attendedSlugs ?? apiServer.attendedTeamSlugs(settings: settings)
+                        attendedSlugs = slugs
+                        teamAssignmentToMe = slugs.contains(name)
                     }
                     teamAssigneeNames.append(name)
                 }
@@ -360,11 +363,15 @@ class ListableItem: DataItem, Listable {
         userNodeId == apiServer.userNodeId
     }
 
-    private final func contains(terms: [String]) -> Bool {
-        if let body, terms.contains(where: { !$0.isEmpty && body.localizedCaseInsensitiveContains($0) }) {
+    /** Whether the body or a comment holds one of the terms. */
+    private final func contains(terms: [String], matching: TermMatching) -> Bool {
+        if terms.isEmpty {
+            return false
+        }
+        if let body, terms.contains(where: { matching.finds($0, in: body) }) {
             return true
         }
-        return comments.contains(where: { $0.contains(terms: terms) })
+        return comments.contains(where: { $0.contains(terms: terms, matching: matching) })
     }
 
     private final var commentedByMe: Bool {
@@ -456,7 +463,7 @@ class ListableItem: DataItem, Listable {
         wasAwokenFromSnooze = explicityAwoke
     }
 
-    var preferredSectionBasedOnReviewAssignment: Section? {
+    func preferredSectionBasedOnReviewAssignment(settings _: Settings.Cache) -> Section? {
         nil
     }
 
@@ -504,13 +511,13 @@ class ListableItem: DataItem, Listable {
 
         if let potentialSection = settings.preferredMovePolicySection,
            potentialSection.sectionIndex < targetSection.sectionIndex,
-           contains(terms: ["@\(apiServer.userName.orEmpty)"]) {
+           contains(terms: ["@\(apiServer.userName.orEmpty)"], matching: .substring) {
             targetSection = potentialSection
         }
 
         if let potentialSection = settings.preferredTeamMentionPolicy,
            potentialSection.sectionIndex < targetSection.sectionIndex,
-           contains(terms: apiServer.teams.compactMap(\.calculatedReferral)) {
+           contains(terms: apiServer.attendedTeams(settings: settings).compactMap(\.calculatedReferral), matching: .wholeReferral) {
             targetSection = potentialSection
         }
 
@@ -520,7 +527,7 @@ class ListableItem: DataItem, Listable {
             targetSection = potentialSection
         }
 
-        if let potentialSection = preferredSectionBasedOnReviewAssignment,
+        if let potentialSection = preferredSectionBasedOnReviewAssignment(settings: settings),
            potentialSection.sectionIndex < targetSection.sectionIndex {
             targetSection = potentialSection
         }

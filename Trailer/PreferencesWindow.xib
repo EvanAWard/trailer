@@ -1231,6 +1231,28 @@ You can also use "state:" with unread/open/closed/merged/snoozed/draft/conflict 
                                                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                     </textFieldCell>
                                                 </textField>
+                                                <box fixedFrame="YES" borderType="line" title="Ignored teams" translatesAutoresizingMaskIntoConstraints="NO" id="Ign-tm-001">
+                                                    <rect key="frame" x="433" y="107" width="406" height="96"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                    <view key="contentView" id="Ign-tm-002">
+                                                        <rect key="frame" x="4" y="5" width="398" height="76"/>
+                                                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                        <subviews>
+                                                            <tokenField verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" allowsCharacterPickerTouchBarItem="YES" translatesAutoresizingMaskIntoConstraints="NO" id="Ign-tm-003">
+                                                                <rect key="frame" x="16" y="10" width="366" height="56"/>
+                                                                <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                                                <tokenFieldCell key="cell" selectable="YES" editable="YES" borderStyle="bezel" alignment="left" placeholderString="Team slugs or org/slug, e.g. my-org/everyone" drawsBackground="YES" allowsEditingTextAttributes="YES" tokenStyle="rounded" id="Ign-tm-004">
+                                                                    <font key="font" metaFont="cellTitle"/>
+                                                                    <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                                    <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                                </tokenFieldCell>
+                                                                <connections>
+                                                                    <outlet property="delegate" destination="vQH-WF-vh2" id="Ign-tm-005"/>
+                                                                </connections>
+                                                            </tokenField>
+                                                        </subviews>
+                                                    </view>
+                                                </box>
                                                 <box fixedFrame="YES" borderType="line" title="Pull request file paths" translatesAutoresizingMaskIntoConstraints="NO" id="Pth-b0-003">
                                                     <rect key="frame" x="17" y="0.0" width="994" height="103"/>
                                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
@@ -3223,6 +3245,7 @@ in System Preferences -&gt; Security -&gt; Privacy.  Restart Trailer for the per
                 <outlet property="pathFilterMovePolicy" destination="Pth-b0-010" id="Pth-b0-031"/>
                 <outlet property="pathFilterNote" destination="Pth-b0-018" id="Pth-b0-032"/>
                 <outlet property="pathFilterOverridesRepoPolicy" destination="Pth-b0-022" id="Pth-b0-033"/>
+                <outlet property="ignoredTeamsList" destination="Ign-tm-003" id="Ign-tm-006"/>
                 <outlet property="tabs" destination="RGK-bv-JXB" id="B5b-gW-VDa"/>
                 <outlet property="teamMentionMovePolicy" destination="gM2-vc-gT5" id="ZPB-jw-m7v"/>
                 <outlet property="v4ApiSwitch" destination="7V9-LT-Yjg" id="3qv-tI-fGl"/>

@@ -106,10 +106,14 @@ enum Settings {
         let pathFilterPatterns = PathFilter.patterns(from: Settings.pathFilterList)
         let pathFilterMovePolicy = Settings.pathFilterMovePolicy.preferredSection
         let pathFilterOverridesRepoPolicy = Settings.pathFilterOverridesRepoPolicy
+        /** The ignored teams, as normalised entries which `Team.isIgnored(by:)` checks. */
+        let ignoredTeams = Team.normalizedIgnoreEntries(Settings.ignoredTeams)
         let repoHidingPolicies = Settings.repoHidingPolicies
         let useV4API = Settings.useV4API
         let assignedItemDirectHandlingPolicy = Settings.assignedItemDirectHandlingPolicy
         let assignedItemTeamHandlingPolicy = Settings.assignedItemTeamHandlingPolicy
+        let assignedDirectReviewHandlingPolicy = Settings.assignedDirectReviewHandlingPolicy
+        let assignedTeamReviewHandlingPolicy = Settings.assignedTeamReviewHandlingPolicy
         let notifyOnAllReviewChangeRequests = Settings.notifyOnAllReviewChangeRequests
         let notifyOnAllReviewAcceptances = Settings.notifyOnAllReviewAcceptances
         let notifyOnAllReviewDismissals = Settings.notifyOnAllReviewDismissals
@@ -233,7 +237,7 @@ enum Settings {
             "AUTO_SNOOZE_DAYS", "HIDE_MENUBAR_COUNTS", "AUTO_ADD_NEW_REPOS", "AUTO_REMOVE_DELETED_REPOS", "MARK_PRS_AS_UNREAD_ON_NEW_COMMITS", "SHOW_LABELS", "DISPLAY_REVIEW_CHANGE_REQUESTS", "SHOW_RELATIVE_DATES", "QUERY_AUTHORED_PRS", "QUERY_AUTHORED_ISSUES",
             "DISPLAY_MILESTONES", "DEFAULT_APP_FOR_OPENING_WEB", "DEFAULT_APP_FOR_OPENING_ITEMS", "HIDE_ARCHIVED_REPOS", "DRAFT_HANDLING_POLICY", "MARK_UNMERGEABLE_ITEMS", "SHOW_PR_LINES", "SCAN_CLOSED_AND_MERGED", "USE_V4_API", "REQUESTED_TEAM_REVIEWS",
             "SHOW_STATUSES_GREEN", "SHOW_STATUSES_GRAY", "SHOW_STATUSES_YELLOW", "SHOW_STATUSES_RED", "SHOW_BASE_AND_HEAD_BRANCHES", "PERSISTED_TAB_FILTERS", "PR_V4_SYNC_PAGE", "ISSUE_V4_SYNC_PAGE", "V4_THREAD_SYNC", "ASSIGNED_PR_TEAM_HANDLING_POLICY",
-            "ASSIGNED_REVIEW_TEAM_HANDLING_POLICY", "AUTO_REMOVE_MERGED_ITEMS", "AUTO_REMOVE_CLOSED_ITEMS", "LABELS_INCLUSION_RULE", "AUTHORS_INCLUSION_RULE", "COMMENTER_INCLUSION_RULE", "SHOW_CLOSING_INFO", "PATH_FILTER_LIST", "PATH_FILTER_MOVE_POLICY", "PATH_FILTER_OVERRIDES_REPO_POLICY",
+            "ASSIGNED_REVIEW_TEAM_HANDLING_POLICY", "AUTO_REMOVE_MERGED_ITEMS", "AUTO_REMOVE_CLOSED_ITEMS", "LABELS_INCLUSION_RULE", "AUTHORS_INCLUSION_RULE", "COMMENTER_INCLUSION_RULE", "SHOW_CLOSING_INFO", "PATH_FILTER_LIST", "IGNORED_TEAMS", "PATH_FILTER_MOVE_POLICY", "PATH_FILTER_OVERRIDES_REPO_POLICY",
             "NOTIFY_ON_CODE_COMMENTS", "NOTIFY_ON_ALL_CODE_COMMENTS", "NOTIFY_ON_COMMENT_REPLIES", "NOTIFY_ON_ALL_COMMENT_REPLIES", "NOTIFY_ON_REPLIES_ON_MY_ITEMS", "NOTIFY_ON_ITEM_COMMENTS", "NOTIFY_ON_ALL_ITEM_COMMENTS",
             "REPO_HIDING_POLICIES", "REPO_HIDING_POLICIES_MIGRATED"
         ] + NotificationType.allCases.map(notificationSoundKey)
@@ -591,6 +595,10 @@ enum Settings {
     @UserDefault(key: "PATH_FILTER_LIST", defaultValue: [String]())
     static var pathFilterList: [String]
     static let pathFilterListHelp = "Move a pull request when it changes one of these paths. A pattern is relative to the root of each repository, so a broad pattern such as \"docs\" matches in every repository which has File Paths ticked. Use * and ? as wildcards, and a wildcard also crosses a directory separator, so \"*.md\" finds a Markdown file at any depth. A pattern with no wildcard matches whole path components, so \"docs\" reaches docs/a.md but never documentation/a.md."
+
+    @UserDefault(key: "IGNORED_TEAMS", defaultValue: [String]())
+    static var ignoredTeams: [String]
+    static let ignoredTeamsHelp = "Treat these teams as if you were not a member. A review request, assignment or mention for an ignored team does not move an item or raise a notification. An entry is a team slug, such as \"platform\", or an organisation and slug, such as \"my-org/platform\". Case does not matter, and a leading @ is allowed. Review requests and assignments are matched on the slug alone, so an organisation and slug entry does not stop them while you belong to a team with the same slug in another organisation."
 
     /**
      Hiding policies per repository, keyed by repository node ID, holding raw `RepoHidingPolicy`

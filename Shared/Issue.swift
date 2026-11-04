@@ -21,7 +21,7 @@ final class Issue: ListableItem {
         super.webUrl?.appending(pathComponent: "issues").appending(pathComponent: String(number))
     }
 
-    static func sync(from nodes: Lista<Node>, on server: ApiServer, moc: NSManagedObjectContext, parentCache: FetchCache) {
+    static func sync(from nodes: Lista<Node>, on server: ApiServer, moc: NSManagedObjectContext, parentCache: FetchCache, settings: Settings.Cache) {
         syncItems(of: Issue.self, from: nodes, on: server, moc: moc, parentCache: parentCache) { issue, node in
             let parentId: String
             if let parent = node.parent {
@@ -44,18 +44,18 @@ final class Issue: ListableItem {
                   let parent = Repo.asParent(with: parentId, in: moc, parentCache: parentCache)
             else { return }
 
-            issue.baseNodeSync(node: node, parent: parent)
+            issue.baseNodeSync(node: node, parent: parent, settings: settings)
         }
     }
 
-    static func syncIssues(from data: [TypedJson.Entry]?, in repo: Repo, moc: NSManagedObjectContext) async {
+    static func syncIssues(from data: [TypedJson.Entry]?, in repo: Repo, moc: NSManagedObjectContext, settings: Settings.Cache) async {
         let apiServer = repo.apiServer
         let repoId = repo.objectID
 
         let filteredData = data?.filter { (try? $0.keys.contains("pull_request")) == false } // don't sync issues which are pull requests, they are already synced
         await v3items(with: filteredData, type: Issue.self, serverId: apiServer.objectID, prefetchRelationships: ["labels"], moc: moc) { item, info, isNewOrUpdated, syncMoc in
             if isNewOrUpdated, let repo = try? syncMoc.existingObject(with: repoId) as? Repo {
-                item.baseSync(from: info, in: repo)
+                item.baseSync(from: info, in: repo, settings: settings)
 
                 for l in item.labels {
                     l.postSyncAction = PostSyncAction.delete.rawValue

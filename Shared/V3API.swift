@@ -63,7 +63,7 @@ extension API {
         }
     }
 
-    private static func fetchItems(for repos: [Repo], in moc: NSManagedObjectContext) async {
+    private static func fetchItems(for repos: [Repo], in moc: NSManagedObjectContext, settings: Settings.Cache) async {
         for r in repos {
             for p in r.pullRequests where p.condition == ItemCondition.open.rawValue {
                 p.postSyncAction = PostSyncAction.delete.rawValue
@@ -81,7 +81,7 @@ extension API {
                     let repoFullName = r.fullName.orEmpty
                     group.addTask {
                         let result = await RestAccess.getPagedData(at: "/repos/\(repoFullName)/pulls", from: apiServer) { data, _ in
-                            await PullRequest.syncPullRequests(from: data, in: r, moc: moc)
+                            await PullRequest.syncPullRequests(from: data, in: r, moc: moc, settings: settings)
                             return false
                         }
                         await handleRepoSync(for: r, result: result)
@@ -92,7 +92,7 @@ extension API {
                     let repoFullName = r.fullName.orEmpty
                     group.addTask {
                         let result = await RestAccess.getPagedData(at: "/repos/\(repoFullName)/issues", from: apiServer) { data, _ in
-                            await Issue.syncIssues(from: data, in: r, moc: moc)
+                            await Issue.syncIssues(from: data, in: r, moc: moc, settings: settings)
                             return false
                         }
                         await handleRepoSync(for: r, result: result)
@@ -106,7 +106,8 @@ extension API {
     @MainActor
     private struct ReviewActorScan {
         let apiServer: ApiServer
-        let myTeamSlugs: Set<String>
+        /** The slugs of the teams I attend on the server. */
+        let attendedTeamSlugs: Set<String>
         let prsByNumber: [Int: PullRequest]
         let collectDismissers: Bool
         let collectRequesters: Bool
@@ -114,7 +115,7 @@ extension API {
 
         /**
          Reads one issue event and keeps it when it names a review actor. A review request is applied at
-         once, and only when it names me or one of my teams, and is filed by the kind of request it made.
+         once, and only when it names me or one of the teams I attend, and is filed by the kind of request it made.
          Any other event is ignored.
          */
         func read(_ event: TypedJson.Entry, named name: String) {
@@ -139,7 +140,7 @@ extension API {
                         collector.setRequester(actor, on: pr, kind: .personal)
                     }
                 } else if let slug = event.potentialObject(named: "requested_team")?.potentialString(named: "slug"),
-                          myTeamSlugs.contains(slug),
+                          attendedTeamSlugs.contains(slug),
                           let pr = prsByNumber[issueNumber] {
                     collector.setRequester(actor, on: pr, kind: .team)
                 }
@@ -167,7 +168,7 @@ extension API {
                     // only the requester arm reads the teams and the pull requests, so the dismisser arm faults neither
                     let scan: ReviewActorScan? = if collectActors {
                         ReviewActorScan(apiServer: apiServer,
-                                        myTeamSlugs: collectRequesters ? apiServer.myTeamSlugs : [],
+                                        attendedTeamSlugs: collectRequesters ? apiServer.attendedTeamSlugs(settings: settings) : [],
                                         prsByNumber: collectRequesters ? Dictionary(r.pullRequests.map { ($0.number, $0) }, uniquingKeysWith: { first, _ in first }) : [:],
                                         collectDismissers: collectDismissers,
                                         collectRequesters: collectRequesters,
@@ -236,7 +237,7 @@ extension API {
     }
 
     static func v3Sync(_ repos: [Repo], to moc: NSManagedObjectContext, settings: Settings.Cache) async {
-        await fetchItems(for: repos, in: moc)
+        await fetchItems(for: repos, in: moc, settings: settings)
         let reposWithSomeItems = repos.filter { !$0.issues.isEmpty || !$0.pullRequests.isEmpty }
         let reviewActors = await markExtraUpdatedItems(from: reposWithSomeItems, settings: settings)
         let newOrUpdatedPrs = PullRequest.newOrUpdatedItems(in: moc, fromSuccessfulSyncOnly: true)
@@ -286,7 +287,7 @@ extension API {
             }
 
             group.addTask {
-                await detectAssignedPullRequests(for: newOrUpdatedPrs)
+                await detectAssignedPullRequests(for: newOrUpdatedPrs, settings: settings)
             }
 
             if settings.shouldSyncReviewAssignments {
@@ -586,7 +587,7 @@ extension API {
                         for userName in userList.compactMap({ $0.potentialString(named: "login") }) {
                             reviewUsers.insert(userName)
                         }
-                        p.checkAndStoreReviewAssignments(reviewUsers, reviewTeams, myTeamSlugs: p.apiServer.myTeamSlugs, settings: settings)
+                        p.checkAndStoreReviewAssignments(reviewUsers, reviewTeams, settings: settings)
 
                     } else if let data, let userList = data.potentialArray(named: "users"), let teamList = data.potentialArray(named: "teams") {
                         // New API results
@@ -596,7 +597,7 @@ extension API {
                         for teamName in teamList.compactMap({ $0.potentialString(named: "slug") }) {
                             reviewTeams.insert(teamName)
                         }
-                        p.checkAndStoreReviewAssignments(reviewUsers, reviewTeams, myTeamSlugs: p.apiServer.myTeamSlugs, settings: settings)
+                        p.checkAndStoreReviewAssignments(reviewUsers, reviewTeams, settings: settings)
 
                     } else {
                         p.apiServer.lastSyncSucceeded = false
@@ -707,7 +708,7 @@ extension API {
         }
     }
 
-    private static func detectAssignedPullRequests(for prs: [PullRequest]) async {
+    private static func detectAssignedPullRequests(for prs: [PullRequest], settings: Settings.Cache) async {
         await withTaskGroup { group in
             for p in prs {
                 let apiServer = p.apiServer
@@ -716,7 +717,7 @@ extension API {
                         do {
                             let (data, _, _) = try await RestAccess.getData(in: issueLink, from: apiServer)
                             if let data {
-                                p.processAssignmentStatus(from: data, idField: "node_id")
+                                p.processAssignmentStatus(from: data, idField: "node_id", settings: settings)
                             }
                         } catch {
                             apiServer.lastSyncSucceeded = false

@@ -104,7 +104,7 @@ final class PullRequest: ListableItem {
         }
     }
 
-    static func sync(from nodes: Lista<Node>, on server: ApiServer, moc: NSManagedObjectContext, parentCache: FetchCache, filePaths: FilePathCollector? = nil, reviewRequests: ReviewRequestCollector? = nil) {
+    static func sync(from nodes: Lista<Node>, on server: ApiServer, moc: NSManagedObjectContext, parentCache: FetchCache, settings: Settings.Cache, filePaths: FilePathCollector? = nil, reviewRequests: ReviewRequestCollector? = nil) {
         syncItems(of: PullRequest.self, from: nodes, on: server, moc: moc, parentCache: parentCache) { pr, node in
             // the file path step answers with no updatedAt, so its payload has to be read above the guard below
             if let files = node.jsonPayload.potentialObject(named: "files") {
@@ -143,7 +143,7 @@ final class PullRequest: ListableItem {
             pr.linesRemoved = json.potentialInt(named: "deletions") ?? 0
             pr.mergeCommitSha = json.potentialString(named: "headRefOid")
             pr.mergedByNodeId = json.potentialObject(named: "mergedBy")?.potentialString(named: "id")
-            pr.baseNodeSync(node: node, parent: parent)
+            pr.baseNodeSync(node: node, parent: parent, settings: settings)
             pr.reviewers = "" // will be populated by the review request API calls
             pr.teamReviewers = "" // will be populated by the review request API calls
 
@@ -183,14 +183,14 @@ final class PullRequest: ListableItem {
     }
 
     @MainActor
-    static func syncPullRequests(from data: [TypedJson.Entry]?, in repo: Repo, moc: NSManagedObjectContext) async {
+    static func syncPullRequests(from data: [TypedJson.Entry]?, in repo: Repo, moc: NSManagedObjectContext, settings: Settings.Cache) async {
         let apiServer = repo.apiServer
         let apiServerUserId = apiServer.userNodeId
         let repoId = repo.objectID
         await v3items(with: data, type: PullRequest.self, serverId: apiServer.objectID, moc: moc) { item, info, isNewOrUpdated, syncMoc in
             if isNewOrUpdated {
                 let repo = try! syncMoc.existingObject(with: repoId) as! Repo
-                item.baseSync(from: info, in: repo)
+                item.baseSync(from: info, in: repo, settings: settings)
 
                 let baseInfo = info.potentialObject(named: "base")
                 item.baseLabel = baseInfo?.potentialString(named: "label")
@@ -233,20 +233,49 @@ final class PullRequest: ListableItem {
         reviews.contains { $0.isMine }
     }
 
-    override var preferredSectionBasedOnReviewAssignment: Section? {
-        switch AssignmentStatus(rawValue: assignedReviewStatus) {
-        case nil, .none?, .others:
+    /**
+     Decides who a set of review requests is for. "My team" means a team I attend, so a request for an
+     ignored team counts as a request for somebody else.
+     */
+    private func reviewAssignmentStatus(reviewerNames: Set<String>, teamSlugs: Set<String>, settings: Settings.Cache) -> AssignmentStatus {
+        if reviewerNames.contains(where: { apiServer.isMe($0) }) {
+            return .me
+        }
+        if teamSlugs.isEmpty {
+            return .none
+        }
+        return namesAttendedTeam(teamSlugs, settings: settings) ? .myTeam : .others
+    }
+
+    private func namesAttendedTeam(_ teamSlugs: Set<String>, settings: Settings.Cache) -> Bool {
+        !teamSlugs.isDisjoint(with: apiServer.attendedTeamSlugs(settings: settings))
+    }
+
+    override func preferredSectionBasedOnReviewAssignment(settings: Settings.Cache) -> Section? {
+        let directPolicy = settings.assignedDirectReviewHandlingPolicy
+        let teamPolicy = settings.assignedTeamReviewHandlingPolicy
+        guard directPolicy.visible || teamPolicy.visible else {
+            return nil
+        }
+        if reviewers.isEmpty, teamReviewers.isEmpty {
+            return nil
+        }
+
+        // derived from the stored requests rather than the stored status, so a change to the ignored teams applies without a resync
+        let status = reviewAssignmentStatus(reviewerNames: Set(reviewers.split(separator: ",").map(String.init)),
+                                            teamSlugs: Set(teamReviewers.split(separator: ",").map(String.init)),
+                                            settings: settings)
+        switch status {
+        case .none, .others:
             break
 
         case .me:
-            if Settings.assignedDirectReviewHandlingPolicy.visible,
-               let section = Settings.assignedDirectReviewHandlingPolicy.preferredSection {
+            if directPolicy.visible, let section = directPolicy.preferredSection {
                 return section.visible ? section : .hidden(cause: .assignedDirectReview)
             }
 
         case .myTeam:
-            if Settings.assignedTeamReviewHandlingPolicy.visible,
-               let section = Settings.assignedTeamReviewHandlingPolicy.preferredSection {
+            if teamPolicy.visible, let section = teamPolicy.preferredSection {
                 return section.visible ? section : .hidden(cause: .assignedTeamReview)
             }
         }
@@ -326,25 +355,15 @@ final class PullRequest: ListableItem {
         }
     }
 
-    func checkAndStoreReviewAssignments(_ reviewerNames: Set<String>, _ reviewerTeams: Set<String>, myTeamSlugs: Set<String>, settings: Settings.Cache) {
+    func checkAndStoreReviewAssignments(_ reviewerNames: Set<String>, _ reviewerTeams: Set<String>, settings: Settings.Cache) {
         reviewers = reviewerNames.joined(separator: ",")
         teamReviewers = reviewerTeams.joined(separator: ",")
 
-        let namesMe = reviewerNames.contains { apiServer.isMe($0) }
-        let namesMyTeam = !reviewerTeams.isEmpty && !reviewerTeams.isDisjoint(with: myTeamSlugs)
-
-        let status: AssignmentStatus = if namesMe {
-            .me
-        } else if reviewerTeams.isEmpty {
-            .none
-        } else if namesMyTeam {
-            .myTeam
-        } else {
-            .others
-        }
+        let status = reviewAssignmentStatus(reviewerNames: reviewerNames, teamSlugs: reviewerTeams, settings: settings)
+        let namesMyTeam = namesAttendedTeam(reviewerTeams, settings: settings)
 
         // a requester login stays while its own kind of request stands, so one kind never discards the other
-        if !namesMe { personalReviewRequesterName = nil }
+        if status != .me { personalReviewRequesterName = nil }
         if !namesMyTeam { teamReviewRequesterName = nil }
         setAssignedReviewStatus(to: status, settings: settings)
     }

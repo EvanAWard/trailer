@@ -26,9 +26,17 @@ final class ApiServer: NSManagedObject {
     @NSManaged var reviews: Set<Review>
     @NSManaged var reactions: Set<Reaction>
 
-    /** The slugs of every team I belong to on this server. */
-    var myTeamSlugs: Set<String> {
-        Set(teams.compactMap(\.slug))
+    /** The teams I belong to on this server, leaving out the ones the settings ignore. */
+    func attendedTeams(settings: Settings.Cache) -> [Team] {
+        teams.filter { !$0.isIgnored(by: settings.ignoredTeams) }
+    }
+
+    /**
+     The slugs of the teams I attend on this server. A review request or a team assignment is matched
+     against them on the slug alone, so a team of another organisation that has the same slug also counts.
+     */
+    func attendedTeamSlugs(settings: Settings.Cache) -> Set<String> {
+        Set(attendedTeams(settings: settings).compactMap(\.slug))
     }
 
     /** Whether this login is mine. An unknown login, or an unknown user name, is not me. */
