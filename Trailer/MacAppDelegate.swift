@@ -85,6 +85,7 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, N
         theme = getTheme() // also sets up windows
 
         NotificationManager.shared.setup()
+        SigningExpiryReminder.start()
 
         Task {
             await DataManager.postProcessAllItems(in: DataManager.main, settings: Settings.cache)
