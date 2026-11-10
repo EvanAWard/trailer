@@ -158,11 +158,43 @@ enum API {
         }
     }
 
+    /** True while a settings import replaces the servers and repositories, which no sync may touch. */
+    private(set) static var isImportingSettings = false
+
+    /** Syncs that have started, including those that have not set `isRefreshing` yet. */
+    private static var syncsInProgress = 0
+
+    /**
+     Claims the data for a settings import.
+     - Returns: `false`, claiming nothing, while a sync, a refresh or another import is running.
+     */
+    static func beginSettingsImport() -> Bool {
+        if isRefreshing || syncsInProgress > 0 || isImportingSettings {
+            return false
+        }
+        isImportingSettings = true
+        return true
+    }
+
+    /** Releases the claim that `beginSettingsImport` took. */
+    static func endSettingsImport() {
+        isImportingSettings = false
+    }
+
     ////////////////////////////////////// API interface
 
     static func attemptV4Migration() async {
         while isRefreshing {
             try? await Task.sleep(nanoseconds: 1 * NSEC_PER_SEC)
+        }
+
+        if isImportingSettings {
+            // a migration started from the API options has already claimed the phase; hand it to the next sync
+            if Settings.V4IdMigrationPhase == .inProgress {
+                Settings.V4IdMigrationPhase = .pending
+            }
+            await Logging.shared.log("Won't migrate IDs because settings are being imported")
+            return
         }
 
         isRefreshing = true
@@ -218,6 +250,15 @@ enum API {
     }
 
     static func performSync(settings: Settings.Cache) async {
+        if isImportingSettings {
+            await Logging.shared.log("Won't sync because settings are being imported")
+            return
+        }
+        syncsInProgress += 1
+        defer {
+            syncsInProgress -= 1
+        }
+
         let syncMoc = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
         syncMoc.undoManager = nil
         syncMoc.parent = DataManager.main

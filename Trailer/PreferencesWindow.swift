@@ -1557,7 +1557,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     }
 
     func refreshRepos() {
-        if !ApiServer.someServersHaveAuthTokens(in: DataManager.main) || API.isRefreshing {
+        if !ApiServer.someServersHaveAuthTokens(in: DataManager.main) || API.isRefreshing || API.isImportingSettings {
             return
         }
         API.isRefreshing = true
