@@ -1123,6 +1123,21 @@ enum Settings {
         static func setNotificationSound(_ sound: NotificationSound, for type: NotificationType) {
             Settings[notificationSoundKey(for: type)] = sound.storedValue
         }
+
+        /**
+         Whether the signing expiry reminder is on. The reminder is about the certificate on this Mac, so
+         none of its settings is exported.
+         */
+        @UserDefault(key: "SIGNING_EXPIRY_REMINDER_ENABLED", defaultValue: true)
+        static var signingExpiryReminderEnabled: Bool
+
+        /** A `NotificationSound.storedValue`. */
+        @UserDefault(key: "SIGNING_EXPIRY_REMINDER_SOUND", defaultValue: "")
+        static var signingExpiryReminderSound: String
+
+        /** The certificate expiry that the reminder was last set up for, so one certificate is announced once. */
+        @OptionalUserDefault(key: "SIGNING_EXPIRY_REMINDER_SET_FOR")
+        static var signingExpiryReminderSetFor: Date?
     #endif
 
     /** Whether Trailer posts this kind of notification. Nothing stored means on, so an upgrade keeps its behaviour. */

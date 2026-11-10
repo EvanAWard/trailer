@@ -86,6 +86,7 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, N
 
         NotificationManager.shared.setup()
         NotificationSound.removeUnusedCopies()
+        SigningExpiryReminder.schedule()
 
         Task {
             await DataManager.postProcessAllItems(in: DataManager.main, settings: Settings.cache)

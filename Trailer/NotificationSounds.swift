@@ -91,19 +91,85 @@ enum NotificationSound: Equatable {
     }
 
     /** Deletes the copies of sounds that no setting selects any more. */
+    @MainActor
     static func removeUnusedCopies() {
-        let selected = NotificationType.allCases.compactMap { type -> String? in
-            guard case let .named(name) = Settings.notificationSound(for: type) else { return nil }
+        let selected = NotificationPreference.all.compactMap { preference -> String? in
+            guard case let .named(name) = preference.sound else { return nil }
             return name
         }
         NotificationSoundLibrary.removeCopies(except: Set(selected))
     }
 }
 
+/** One row of the Notifications preferences: a kind of item notification, or the app's own signing reminder. */
+@MainActor
+enum NotificationPreference {
+    case item(NotificationType)
+    case signingExpiry
+
+    /** Every row, in the order that the preferences list them under each heading. */
+    static var all: [NotificationPreference] {
+        NotificationType.allCases.map { .item($0) } + [.signingExpiry]
+    }
+
+    /** The text that labels the row in the preferences. */
+    var title: String {
+        switch self {
+        case let .item(type): type.title
+        case .signingExpiry: "Signing Expiring"
+        }
+    }
+
+    var group: NotificationType.Group {
+        switch self {
+        case let .item(type): type.group
+        case .signingExpiry: .app
+        }
+    }
+
+    /** The preferences tab that holds the on/off control, or `nil` if the Notifications tab holds it. */
+    var controlTabName: String? {
+        switch self {
+        case let .item(type): type.controlTabName
+        case .signingExpiry: nil
+        }
+    }
+
+    var sound: NotificationSound {
+        get {
+            switch self {
+            case let .item(type): Settings.notificationSound(for: type)
+            case .signingExpiry: SigningExpiryReminder.sound
+            }
+        }
+        nonmutating set {
+            switch self {
+            case let .item(type): Settings.setNotificationSound(newValue, for: type)
+            case .signingExpiry: SigningExpiryReminder.sound = newValue
+            }
+        }
+    }
+
+    var isEnabled: Bool {
+        get {
+            switch self {
+            case let .item(type): Settings.notificationEnabled(for: type)
+            case .signingExpiry: SigningExpiryReminder.isEnabled
+            }
+        }
+        nonmutating set {
+            switch self {
+            case let .item(type): Settings.setNotificationEnabled(newValue, for: type)
+            case .signingExpiry: SigningExpiryReminder.isEnabled = newValue
+            }
+        }
+    }
+}
+
 extension NotificationType {
     /** The heading under which the preferences show a kind of notification. */
     enum Group: CaseIterable {
-        case comments, pullRequests, issues, reviews, statuses, repositories
+        case comments, pullRequests, issues, reviews, statuses, repositories, app
 
         var title: String {
             switch self {
@@ -113,6 +179,7 @@ extension NotificationType {
             case .reviews: "Reviews"
             case .statuses: "Statuses"
             case .repositories: "Repositories"
+            case .app: "App"
             }
         }
     }
