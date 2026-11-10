@@ -759,10 +759,16 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     }
 
     func reloadSettings() {
+        // an import replaces the servers, snooze presets and repositories, so rows from before it are stale
+        serverList.reloadData()
         let firstRow = IndexSet(integer: 0)
         serverList.selectRowIndexes(firstRow, byExtendingSelection: false)
         fillServerApiFormFromSelectedServer()
+        snoozePresetsList.reloadData()
+        snoozePresetsList.deselectAll(nil)
         fillSnoozeFormFromSelectedPreset()
+        projectsTable.deselectAll(nil)
+        reloadRepositories()
 
         Task {
             await API.updateLimitsFromServer()
