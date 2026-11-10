@@ -395,6 +395,9 @@ enum Settings {
 
     private static let goodKeys: Set = ["LAST_SUCCESSFUL_REFRESH", "LAST_EXPORT_URL", "LAST_EXPORT_TIME"]
 
+    /** True while `readFromURL` replaces the settings, so no export writes a half-finished import. */
+    private static var isImportingSettings = false
+
     #if os(macOS)
         static var isAppLoginItem: Bool {
             get {
@@ -429,6 +432,10 @@ enum Settings {
     @discardableResult
     @MainActor
     static func writeToURL(_ url: URL) async -> Bool {
+        if isImportingSettings {
+            await Logging.shared.log("Won't export settings while an import is running")
+            return false
+        }
         saveTimer.abort()
 
         Settings.lastExportUrl = url
@@ -450,8 +457,11 @@ enum Settings {
         return true
     }
 
+    @MainActor
     static func readFromURL(_ url: URL) async -> Bool {
         if let settings = NSDictionary(contentsOf: url) {
+            saveTimer.abort()
+            isImportingSettings = true
             await Logging.shared.log("Reading settings from \(url.absoluteString)")
             resetAllSettings()
             for k in allFields {
@@ -463,6 +473,7 @@ enum Settings {
             Settings.repoHidingPoliciesMigrated = true
             let result1 = await ApiServer.configure(from: settings["DB_CONFIG_OBJECTS"] as! [String: [String: NSObject]])
             let result2 = await SnoozePreset.configure(from: settings["DB_SNOOZE_OBJECTS"] as! [[String: NSObject]])
+            isImportingSettings = false
             return result1 && result2
         }
         return false
