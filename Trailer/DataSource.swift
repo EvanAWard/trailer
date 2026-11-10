@@ -42,11 +42,17 @@ extension MenuWindow {
                 segments.append(viewCriterion.label)
                 switch viewCriterion {
                 case let .server(aid):
-                    let uri = aid.uriRepresentation()
-                    if let host = uri.host {
-                        segments.append(host)
+                    // the API path survives a settings import, where the server's object ID does not;
+                    // the object ID is the fallback, so a menu whose server is gone still gets its own key
+                    if let apiPath = (try? DataManager.main.existingObject(with: aid) as? ApiServer)?.apiPath {
+                        segments.append(apiPath)
+                    } else {
+                        let uri = aid.uriRepresentation()
+                        if let host = uri.host {
+                            segments.append(host)
+                        }
+                        segments.append(uri.path)
                     }
-                    segments.append(uri.path)
                 case let .group(name):
                     segments.append(name)
                 }
