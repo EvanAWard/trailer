@@ -484,6 +484,7 @@ enum Settings {
                 Settings[k] = v
             }
         }
+        filterLookup = storedFilters()
         // the file decides the hiding policies, so a later start must not seed them from the repository rows
         Settings.repoHidingPoliciesMigrated = true
         let result1 = await ApiServer.configure(from: serverArchive)
@@ -1074,11 +1075,15 @@ enum Settings {
     static var commenterInclusionRule: InclusionSetting
     static let commenterIncludionRuleHelp = "How to handle the list of comment authors"
 
-    private static var filterLookup: [String: String] = if let data = sharedDefaults.data(forKey: "PERSISTED_TAB_FILTERS"),
-                                                           let dict = try? JSONDecoder().decode([String: String].self, from: data) {
-        dict
-    } else {
-        [:]
+    private static var filterLookup = storedFilters()
+
+    private static func storedFilters() -> [String: String] {
+        if let data = sharedDefaults.data(forKey: "PERSISTED_TAB_FILTERS"),
+           let dict = try? JSONDecoder().decode([String: String].self, from: data) {
+            dict
+        } else {
+            [:]
+        }
     }
 
     static func filter(for key: String) -> String? {
