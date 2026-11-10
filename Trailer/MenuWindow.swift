@@ -215,7 +215,10 @@ final class MenuWindow: NSWindow, NSControlTextEditingDelegate {
         let filterString = filter.stringValue
         dataSource.reloadData(filter: filterString)
         table.reloadData()
-        Settings.setFilter(to: filterString, for: dataSource.uniqueIdentifier)
+        // until setupWindows() rebuilds the menus, an old menu's filter field still holds its pre-import text
+        if !API.isImportingSettings {
+            Settings.setFilter(to: filterString, for: dataSource.uniqueIdentifier)
+        }
     }
 
     func closeMenu() {
