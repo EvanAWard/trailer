@@ -390,14 +390,7 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, N
     @discardableResult
     @MainActor
     func tryLoadSettings(from url: URL, skipConfirm: Bool) async -> Bool {
-        if API.isRefreshing {
-            let alert = NSAlert()
-            alert.messageText = "Trailer is currently refreshing data, please wait until it's done and try importing your settings again"
-            _ = alert.addButton(withTitle: "OK")
-            _ = alert.runModal()
-            return false
-
-        } else if !skipConfirm {
+        if !skipConfirm {
             let alert = NSAlert()
             alert.messageText = "Import settings from this file?"
             alert.informativeText = "This will overwrite all your current Trailer settings, are you sure?"
@@ -413,12 +406,31 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, N
             }
         }
 
+        // checked after the confirmation, which can run long enough for a refresh or another import to start
+        if API.isImportingSettings {
+            let alert = NSAlert()
+            alert.messageText = "Trailer is already importing settings, please wait until it's done"
+            _ = alert.addButton(withTitle: "OK")
+            _ = alert.runModal()
+            return false
+        }
+        if !API.beginSettingsImport() {
+            let alert = NSAlert()
+            alert.messageText = "Trailer is currently refreshing data, please wait until it's done and try importing your settings again"
+            _ = alert.addButton(withTitle: "OK")
+            _ = alert.runModal()
+            return false
+        }
+
         let readSucceeded = await Settings.readFromURL(url)
         if !readSucceeded {
+            API.endSettingsImport()
             let alert = NSAlert()
             alert.messageText = "The selected settings file could not be imported due to an error"
             _ = alert.addButton(withTitle: "OK")
             _ = alert.runModal()
+            // a refresh turned away during the import would otherwise not run again
+            await startRefreshIfItIsDue()
             return false
         }
         Repo.applyStoredHidingPolicies(in: DataManager.main)
@@ -427,6 +439,7 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, N
         preferencesWindow?.reloadSettings()
         setupWindows()
         preferencesDirty = true
+        API.endSettingsImport()
         await startRefresh()
 
         return true
@@ -596,6 +609,11 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, N
     func startRefresh() async {
         if API.isRefreshing {
             await Logging.shared.log("Won't start refresh because refresh is already ongoing")
+            return
+        }
+
+        if API.isImportingSettings {
+            await Logging.shared.log("Won't start refresh because settings are being imported")
             return
         }
 

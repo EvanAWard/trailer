@@ -364,8 +364,9 @@ final class ApiServer: NSManagedObject {
             let a = insertNewServer(in: DataManager.main)
             for (k, v) in apiServerData {
                 if k == "repos" {
-                    let archive = v as! [String: [String: NSObject]]
-                    a.configureRepos(from: archive)
+                    if let archive = v as? [String: [String: NSObject]] {
+                        a.configureRepos(from: archive)
+                    }
                 } else {
                     if a.entity.attributesByName.keys.contains(k) {
                         a.setValue(v, forKey: k)

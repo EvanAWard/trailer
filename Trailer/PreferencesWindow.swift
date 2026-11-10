@@ -759,10 +759,16 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     }
 
     func reloadSettings() {
+        // an import replaces the servers, snooze presets and repositories, so rows from before it are stale
+        serverList.reloadData()
         let firstRow = IndexSet(integer: 0)
         serverList.selectRowIndexes(firstRow, byExtendingSelection: false)
         fillServerApiFormFromSelectedServer()
+        snoozePresetsList.reloadData()
+        snoozePresetsList.deselectAll(nil)
         fillSnoozeFormFromSelectedPreset()
+        projectsTable.deselectAll(nil)
+        reloadRepositories()
 
         Task {
             await API.updateLimitsFromServer()
@@ -1551,7 +1557,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
     }
 
     func refreshRepos() {
-        if !ApiServer.someServersHaveAuthTokens(in: DataManager.main) || API.isRefreshing {
+        if !ApiServer.someServersHaveAuthTokens(in: DataManager.main) || API.isRefreshing || API.isImportingSettings {
             return
         }
         API.isRefreshing = true
@@ -1617,6 +1623,8 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
 
     @IBAction private func repeatLastExportSelected(_: NSButton) {
         Settings.autoRepeatSettingsExport = (repeatLastExportAutomatically.integerValue == 1)
+        // the switch itself is not exported, so turning it on asks for the export it would otherwise wait for
+        Settings.possibleExport(nil)
     }
 
     @IBAction private func exportCurrentSettingsSelected(_: NSButton) {
@@ -2059,6 +2067,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
                     refreshAnyRepoSyncsFilePaths()
                     updatePathFilterNote()
                     deferredUpdateTimer.push()
+                    Settings.possibleExport(nil)
                 }
 
             } else if let index = object as? Int {
@@ -2098,8 +2107,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
             selectedSnoozePreset.wakeOnComment = snoozeWakeOnComment.integerValue == 1
             selectedSnoozePreset.wakeOnMention = snoozeWakeOnMention.integerValue == 1
             selectedSnoozePreset.wakeOnStatusChange = snoozeWakeOnStatusUpdate.integerValue == 1
-            snoozePresetsList.reloadData()
-            deferredUpdateTimer.push()
+            commitSnoozeSettings()
         }
     }
 
