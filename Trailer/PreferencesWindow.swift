@@ -1617,6 +1617,8 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
 
     @IBAction private func repeatLastExportSelected(_: NSButton) {
         Settings.autoRepeatSettingsExport = (repeatLastExportAutomatically.integerValue == 1)
+        // the switch itself is not exported, so turning it on asks for the export it would otherwise wait for
+        Settings.possibleExport(nil)
     }
 
     @IBAction private func exportCurrentSettingsSelected(_: NSButton) {

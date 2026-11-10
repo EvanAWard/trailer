@@ -206,6 +206,10 @@ enum API {
             }
             await Logging.shared.log("v4 sync ID migration complete")
             Settings.V4IdMigrationPhase = .done
+            #if os(macOS)
+                // the settings file lists repositories by their IDs, which the migration has just replaced
+                Settings.possibleExport(nil)
+            #endif
 
         } catch {
             Settings.V4IdMigrationPhase = .failedPending

@@ -221,17 +221,22 @@ enum Settings {
 
     private static let sharedDefaults = UserDefaults(suiteName: appGroupIdentifier)!
 
-    private static var allFields: [String] {
+    /**
+     The settings a settings file carries. An import resets and replaces exactly these keys.
+     Machine-local values, such as the export location, the last refresh and the last run version,
+     are left out so an import keeps them.
+     */
+    private static var exportedFields: [String] {
         [
-            "SORT_METHOD_KEY", "STATUS_FILTERING_METHOD_KEY", "LAST_PREFS_TAB_SELECTED", "STATUS_ITEM_REFRESH_BATCH", "UPDATE_CHECK_INTERVAL_KEY", "ASSIGNED_REVIEW_HANDLING_POLICY", "NOTIFY_ON_REVIEW_CHANGE_REQUESTS", "NOTIFY_ON_ALL_REVIEW_CHANGE_REQUESTS",
-            "STATUS_FILTERING_TERMS_KEY", "COMMENT_AUTHOR_BLACKLIST", "HOTKEY_LETTER", "REFRESH_PERIOD_KEY", "IOS_BACKGROUND_REFRESH_PERIOD_KEY", "NEW_REPO_CHECK_PERIOD", "LAST_SUCCESSFUL_REFRESH", "LABEL_BLACKLIST",
-            "LAST_RUN_VERSION_KEY", "UPDATE_CHECK_AUTO_KEY", "HIDE_UNCOMMENTED_PRS_KEY", "SHOW_COMMENTS_EVERYWHERE_KEY", "SORT_ORDER_KEY", "SHOW_UPDATED_KEY", "DONT_KEEP_MY_PRS_KEY", "HIDE_AVATARS_KEY", "HIDE_NOTIFICATION_AVATARS_KEY",
+            "SORT_METHOD_KEY", "STATUS_FILTERING_METHOD_KEY", "STATUS_ITEM_REFRESH_BATCH", "UPDATE_CHECK_INTERVAL_KEY", "ASSIGNED_REVIEW_HANDLING_POLICY", "NOTIFY_ON_REVIEW_CHANGE_REQUESTS", "NOTIFY_ON_ALL_REVIEW_CHANGE_REQUESTS",
+            "STATUS_FILTERING_TERMS_KEY", "COMMENT_AUTHOR_BLACKLIST", "HOTKEY_LETTER", "REFRESH_PERIOD_KEY", "IOS_BACKGROUND_REFRESH_PERIOD_KEY", "NEW_REPO_CHECK_PERIOD", "LABEL_BLACKLIST",
+            "UPDATE_CHECK_AUTO_KEY", "HIDE_UNCOMMENTED_PRS_KEY", "SHOW_COMMENTS_EVERYWHERE_KEY", "SORT_ORDER_KEY", "SHOW_UPDATED_KEY", "DONT_KEEP_MY_PRS_KEY", "HIDE_AVATARS_KEY", "HIDE_NOTIFICATION_AVATARS_KEY",
             "DONT_ASK_BEFORE_WIPING_MERGED", "DONT_ASK_BEFORE_WIPING_CLOSED", "HIDE_NEW_REPOS_KEY", "GROUP_BY_REPO", "HIDE_ALL_SECTION", "SHOW_STATUS_ITEMS", "NOTIFY_ON_REVIEW_ACCEPTANCES", "NOTIFY_ON_ALL_REVIEW_ACCEPTANCES", "NOTIFY_ON_REVIEW_ASSIGNMENTS",
             "MAKE_STATUS_ITEMS_SELECTABLE", "OPEN_PR_AT_FIRST_UNREAD_COMMENT_KEY", "NOTIFY_ON_REVIEW_DISMISSALS", "NOTIFY_ON_ALL_REVIEW_DISMISSALS", "NOTIFY_ON_MY_REVIEW_DISMISSALS",
             "HOTKEY_ENABLE", "HOTKEY_CONTROL_MODIFIER", "DISABLE_ALL_COMMENT_NOTIFICATIONS", "NOTIFY_ON_STATUS_UPDATES", "NOTIFY_ON_STATUS_UPDATES_ALL", "SHOW_REPOS_IN_NAME", "INCLUDE_REPOS_IN_FILTER", "SHOW_STATUSES_EVERYWHERE",
             "INCLUDE_LABELS_IN_FILTER", "INCLUDE_STATUSES_IN_FILTER", "HOTKEY_COMMAND_MODIFIER", "HOTKEY_OPTION_MODIFIER", "HOTKEY_SHIFT_MODIFIER", "GRAY_OUT_WHEN_REFRESHING", "SHOW_ISSUES_MENU", "NOTIFY_ON_ITEM_REACTIONS",
-            "SHOW_ISSUES_IN_WATCH_GLANCE", "ASSIGNED_PR_HANDLING_POLICY", "HIDE_DESCRIPTION_IN_WATCH_DETAIL_VIEW", "AUTO_REPEAT_SETTINGS_EXPORT", "DONT_CONFIRM_SETTINGS_IMPORT", "NOTIFY_ON_COMMENT_REACTIONS", "REACTION_SCANNING_BATCH",
-            "LAST_EXPORT_URL", "LAST_EXPORT_TIME", "CLOSE_HANDLING_POLICY_2", "MERGE_HANDLING_POLICY_2", "LAST_PREFS_TAB_SELECTED_OSX", "NEW_PR_DISPLAY_POLICY_INDEX", "NEW_ISSUE_DISPLAY_POLICY_INDEX", "HIDE_PRS_THAT_ARENT_PASSING_ONLY_IN_ALL",
+            "SHOW_ISSUES_IN_WATCH_GLANCE", "ASSIGNED_PR_HANDLING_POLICY", "HIDE_DESCRIPTION_IN_WATCH_DETAIL_VIEW", "NOTIFY_ON_COMMENT_REACTIONS", "REACTION_SCANNING_BATCH",
+            "CLOSE_HANDLING_POLICY_2", "MERGE_HANDLING_POLICY_2", "NEW_PR_DISPLAY_POLICY_INDEX", "NEW_ISSUE_DISPLAY_POLICY_INDEX", "HIDE_PRS_THAT_ARENT_PASSING_ONLY_IN_ALL",
             "INCLUDE_SERVERS_IN_FILTER", "INCLUDE_USERS_IN_FILTER", "INCLUDE_TITLES_IN_FILTER", "INCLUDE_NUMBERS_IN_FILTER", "HIDE_PRS_THAT_ARENT_PASSING", "ITEM_AUTHOR_BLACKLIST",
             "REMOVE_RELATED_NOTIFICATIONS_ON_ITEM_REMOVE", "HIDE_SNOOZED_ITEMS", "INCLUDE_MILESTONES_IN_FILTER", "INCLUDE_ASSIGNEE_NAMES_IN_FILTER", "API_SERVERS_IN_SEPARATE_MENUS", "ASSUME_READ_ITEM_IF_USER_HAS_NEWER_COMMENTS",
             "AUTO_SNOOZE_DAYS", "HIDE_MENUBAR_COUNTS", "AUTO_ADD_NEW_REPOS", "AUTO_REMOVE_DELETED_REPOS", "MARK_PRS_AS_UNREAD_ON_NEW_COMMITS", "SHOW_LABELS", "DISPLAY_REVIEW_CHANGE_REQUESTS", "SHOW_RELATIVE_DATES", "QUERY_AUTHORED_PRS", "QUERY_AUTHORED_ISSUES",
@@ -393,8 +398,6 @@ enum Settings {
         }
     }
 
-    private static let goodKeys: Set = ["LAST_SUCCESSFUL_REFRESH", "LAST_EXPORT_URL", "LAST_EXPORT_TIME"]
-
     /** True while `readFromURL` replaces the settings, so no export writes a half-finished import. */
     private static var isImportingSettings = false
 
@@ -416,12 +419,13 @@ enum Settings {
                 return
             }
 
-            let keyIsGood: Bool = if let key {
-                !goodKeys.contains(key)
+            // a key that is not exported can't change the file; no key means a database change
+            let changesFile: Bool = if let key {
+                exportedFields.contains(key)
             } else {
                 true
             }
-            if keyIsGood, Settings.lastExportUrl != nil {
+            if changesFile, Settings.lastExportUrl != nil {
                 saveTimer.push()
             }
         }
@@ -441,7 +445,7 @@ enum Settings {
         Settings.lastExportUrl = url
         Settings.lastExportDate = Date()
         let settings = NSMutableDictionary()
-        for k in allFields where k != "AUTO_REPEAT_SETTINGS_EXPORT" {
+        for k in exportedFields {
             if let v = Settings[k] {
                 settings[k] = v
             }
@@ -462,9 +466,11 @@ enum Settings {
         if let settings = NSDictionary(contentsOf: url) {
             saveTimer.abort()
             isImportingSettings = true
+            // the export file is the copy that could undo this import, so stop repeating the export over it
+            Settings.autoRepeatSettingsExport = false
             await Logging.shared.log("Reading settings from \(url.absoluteString)")
             resetAllSettings()
-            for k in allFields {
+            for k in exportedFields {
                 if let v = settings[k] {
                     Settings[k] = v
                 }
@@ -480,7 +486,7 @@ enum Settings {
     }
 
     static func resetAllSettings() {
-        for k in allFields {
+        for k in exportedFields {
             sharedDefaults.removeObject(forKey: k)
         }
     }
