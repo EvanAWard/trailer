@@ -463,26 +463,41 @@ enum Settings {
 
     @MainActor
     static func readFromURL(_ url: URL) async -> Bool {
-        if let settings = NSDictionary(contentsOf: url) {
-            saveTimer.abort()
-            isImportingSettings = true
-            // the export file is the copy that could undo this import, so stop repeating the export over it
-            Settings.autoRepeatSettingsExport = false
-            await Logging.shared.log("Reading settings from \(url.absoluteString)")
-            resetAllSettings()
-            for k in exportedFields {
-                if let v = settings[k] {
-                    Settings[k] = v
-                }
-            }
-            // the file decides the hiding policies, so a later start must not seed them from the repository rows
-            Settings.repoHidingPoliciesMigrated = true
-            let result1 = await ApiServer.configure(from: settings["DB_CONFIG_OBJECTS"] as! [String: [String: NSObject]])
-            let result2 = await SnoozePreset.configure(from: settings["DB_SNOOZE_OBJECTS"] as! [[String: NSObject]])
-            isImportingSettings = false
-            return result1 && result2
+        // check the whole file before anything is reset, so a broken file leaves the current setup alone
+        guard let settings = NSDictionary(contentsOf: url),
+              let serverArchive = settings["DB_CONFIG_OBJECTS"] as? [String: [String: NSObject]],
+              let snoozeArchive = settings["DB_SNOOZE_OBJECTS"] as? [[String: NSObject]],
+              serverArchive.values.allSatisfy(hasReadableRepos)
+        else {
+            await Logging.shared.log("Warning, \(url.absoluteString) is not a readable settings file")
+            return false
         }
-        return false
+
+        saveTimer.abort()
+        isImportingSettings = true
+        // the export file is the copy that could undo this import, so stop repeating the export over it
+        Settings.autoRepeatSettingsExport = false
+        await Logging.shared.log("Reading settings from \(url.absoluteString)")
+        resetAllSettings()
+        for k in exportedFields {
+            if let v = settings[k] {
+                Settings[k] = v
+            }
+        }
+        // the file decides the hiding policies, so a later start must not seed them from the repository rows
+        Settings.repoHidingPoliciesMigrated = true
+        let result1 = await ApiServer.configure(from: serverArchive)
+        let result2 = await SnoozePreset.configure(from: snoozeArchive)
+        isImportingSettings = false
+        return result1 && result2
+    }
+
+    /** Whether an archived server's repository list, when it has one, is in the shape `ApiServer.configure` reads. */
+    private static func hasReadableRepos(_ serverData: [String: NSObject]) -> Bool {
+        guard let repos = serverData["repos"] else {
+            return true
+        }
+        return repos is [String: [String: NSObject]]
     }
 
     static func resetAllSettings() {
