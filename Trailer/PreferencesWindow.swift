@@ -2067,6 +2067,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
                     refreshAnyRepoSyncsFilePaths()
                     updatePathFilterNote()
                     deferredUpdateTimer.push()
+                    Settings.possibleExport(nil)
                 }
 
             } else if let index = object as? Int {
@@ -2106,8 +2107,7 @@ final class PreferencesWindow: NSWindow, NSWindowDelegate, NSTableViewDelegate, 
             selectedSnoozePreset.wakeOnComment = snoozeWakeOnComment.integerValue == 1
             selectedSnoozePreset.wakeOnMention = snoozeWakeOnMention.integerValue == 1
             selectedSnoozePreset.wakeOnStatusChange = snoozeWakeOnStatusUpdate.integerValue == 1
-            snoozePresetsList.reloadData()
-            deferredUpdateTimer.push()
+            commitSnoozeSettings()
         }
     }
 
