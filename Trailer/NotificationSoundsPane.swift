@@ -177,6 +177,7 @@ final class NotificationSoundsPane: NSObject {
         Settings.setNotificationSound(sound, for: type)
         // The preview reads the system folder directly, so install now to log a failure while the user is here.
         _ = sound.prepared()
+        NotificationSound.removeUnusedCopies()
         sound.play()
     }
 

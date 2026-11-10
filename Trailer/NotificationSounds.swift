@@ -58,9 +58,7 @@ enum NotificationSound: Equatable {
         case .systemDefault: .default
         case .silent: nil
         case let .named(name):
-            NotificationSoundLibrary.install(name)
-                ? UNNotificationSound(named: UNNotificationSoundName(name))
-                : .default
+            NotificationSoundLibrary.install(name).map(UNNotificationSound.init(named:)) ?? .default
         }
     }
 
@@ -71,8 +69,9 @@ enum NotificationSound: Equatable {
             NSSound.beep()
         case .silent:
             break
-        case .named:
-            NSSound(named: baseName)?.play()
+        case let .named(name):
+            // By name, NSSound would find Trailer's copy or a user file first, so read the system file.
+            NSSound(contentsOf: NotificationSoundLibrary.systemSoundsFolder.appendingPathComponent(name), byReference: true)?.play()
         }
     }
 
@@ -89,6 +88,15 @@ enum NotificationSound: Equatable {
             .map(\.lastPathComponent)
             .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
             .map { .named($0) }
+    }
+
+    /** Deletes the copies of sounds that no setting selects any more. */
+    static func removeUnusedCopies() {
+        let selected = NotificationType.allCases.compactMap { type -> String? in
+            guard case let .named(name) = Settings.notificationSound(for: type) else { return nil }
+            return name
+        }
+        NotificationSoundLibrary.removeCopies(except: Set(selected))
     }
 }
 
