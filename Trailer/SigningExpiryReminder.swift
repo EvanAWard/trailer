@@ -2,7 +2,10 @@ import Foundation
 import Security
 @preconcurrency import UserNotifications
 
-/** The moment this build's signing stops being renewable or launchable, and what expires then. */
+/**
+ The moment this build's signing must be renewed by, and what expires then. An expired provisioning profile
+ stops the app launching; an expired certificate stops Xcode signing new builds with it.
+ */
 struct SigningDeadline: Equatable {
     enum Source {
         case certificate, provisioningProfile
@@ -77,7 +80,7 @@ struct SigningDeadline: Equatable {
 
 /**
  Keeps one pending notification that warns a week before the app's signing expires, so there is time to
- renew it in Xcode before macOS refuses to launch the app.
+ renew it in Xcode first.
 
  Each call replaces the earlier request, so launches do not stack reminders.
  */
