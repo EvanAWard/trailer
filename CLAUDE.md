@@ -57,6 +57,11 @@ Notes that will save you a cycle:
   `type_body_length`, `force_cast`, `force_try`, `cyclomatic_complexity` and more. Do not "fix" long
   files or long functions for lint's sake.
 - `.swiftformat` sets `-header ""`: files carry no header comments.
+- The tree is not fully formatted to the installed SwiftFormat: `swiftformat .` rewrites about 27 files
+  you did not touch. Run it on the files you changed (`swiftformat <files>`), and check that it did not
+  reorder untouched lines in them.
+- `swiftlint analyze` needs a build log: `swiftlint analyze --compiler-log-path <xcodebuild log>`. The
+  tree already has about 2,000 `explicit_self` warnings, so filter the output to the files you changed.
 - Launching either app with the `-useSystemLog` argument routes the internal log to `os_log`. Otherwise
   logging is a no-op unless the in-app monitor is open (macOS `ApiMonitorWindow`, iOS `LogMonitor`).
 - Language mode is Swift 5 (`SWIFT_VERSION = 5.0`) even though the toolchain is Swift 6.
@@ -174,6 +179,10 @@ Settings live in `UserDefaults(suiteName: appGroupIdentifier)` — `group.com.ea
   must see one consistent configuration.
 - Legacy/renamed keys are migrated in `Settings.checkMigration()`, called from `bootUp()` in
   `Shared/Globals.swift` alongside `DataManager.checkMigration()` and `API.setup()`.
+- On macOS the app has no app-group entitlement (see "Signing without a provisioning profile"), so the
+  suite is a plain preferences file, `~/Library/Preferences/group.com.eaw.Trailer.plist`. Read it with
+  `defaults read group.com.eaw.Trailer`. Builds that still had the entitlement kept it in
+  `~/Library/Group Containers/group.com.eaw.Trailer/`, which the sandbox will not let you list.
 
 ### Concurrency model
 
@@ -185,11 +194,43 @@ intentional, not sloppiness.
 ### Credentials
 
 `ApiServer.authToken` is **not** stored in Core Data. It reads and writes the keychain through the
-`keyVine` global in `Shared/Globals.swift` (KeyVine package, access group `com.eaw.Trailer`, team
-`63VU3T7V3Q`, shared by the macOS and iOS apps). Tokens found in the old Core Data field are migrated to
-the keychain on first access and the field is blanked.
+`keyVine` global in `Shared/Globals.swift`. Tokens found in the old Core Data field are migrated to the
+keychain on first access and the field is blanked.
 
+- **macOS**: `keyVine` is a `TokenKeychain` (`Trailer/TokenKeychain.swift`): generic passwords in the
+  file-based login keychain, service `com.eaw.Trailer`, no access group, so it needs no entitlement.
+  Check an entry with `security find-generic-password -s com.eaw.Trailer`. Tokens from builds that used
+  KeyVine are left behind in the data-protection keychain and are not read.
+- **iOS**: `keyVine` is a `KeyVine` (access group `com.eaw.Trailer`, team `63VU3T7V3Q`).
+
+Both expose the same `KeyVineDataConvertible` subscript, so `ApiServer` does not care which one it gets.
 `keyVine` is a `nonisolated(unsafe) var`, so it is replaceable.
+
+### Signing without a provisioning profile
+
+The macOS app is signed with a free Personal Team. Xcode embeds a provisioning profile only when an
+entitlement needs one, and a Personal Team profile expires after 7 days, after which macOS refuses to
+launch the app. So `Trailer.entitlements` is empty and `TrailerLauncher.entitlements` has no app group:
+both targets sign with the Apple Development certificate alone ("Provisioning Profile: None Required").
+The certificate lasts a year. Do not add `com.apple.security.application-groups`,
+`keychain-access-groups`, or any other entitlement that needs a profile to a macOS target. Check a build
+with `codesign -d --entitlements - Trailer-E.app`; it must have no `Contents/embedded.provisionprofile`.
+
+What replaced the app-group features on macOS:
+
+- Tokens: `TokenKeychain` (see Credentials).
+- Settings: the same suite name, now in `~/Library/Preferences` (see Settings).
+- Notification sounds: `NotificationSoundLibrary` copies them to `~/Library/Sounds`, because for an app
+  that is not sandboxed the data container that `UNNotificationSound` searches is the home folder.
+
+`Trailer/SigningExpiryReminder.swift` reads the signing certificate's expiry (and an embedded profile's,
+if one ever comes back) at launch, and schedules a notification 7 days before it. The reminder is the
+`NotificationType.signingExpiry` kind, under the "App" heading of the Notifications tab.
+
+Moving from a build with the entitlements was a one-time manual step: export settings from the old
+build, launch the new one, and import the file, which writes the server tokens into `TokenKeychain`.
+Import rebuilds servers and repos, so read and snooze state starts over. Launch at login and the
+auto-export settings are machine-local and are not in the file.
 
 ## Platform UI
 

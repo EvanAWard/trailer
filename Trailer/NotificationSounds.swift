@@ -92,10 +92,15 @@ enum NotificationSound: Equatable {
     }
 }
 
+extension Notification.Name {
+    /** Posted when the user changes the sound or the on/off switch of a kind of notification. The object is that `NotificationType`. */
+    static let notificationSettingsChanged = Notification.Name("NotificationSettingsChangedNotification")
+}
+
 extension NotificationType {
     /** The heading under which the preferences show a kind of notification. */
     enum Group: CaseIterable {
-        case comments, pullRequests, issues, reviews, statuses, repositories
+        case comments, pullRequests, issues, reviews, statuses, repositories, app
 
         var title: String {
             switch self {
@@ -105,6 +110,7 @@ extension NotificationType {
             case .reviews: "Reviews"
             case .statuses: "Statuses"
             case .repositories: "Repositories"
+            case .app: "App"
             }
         }
     }
@@ -133,6 +139,7 @@ extension NotificationType {
         case .newStatus: "PR Status Update"
         case .newRepoSubscribed: "New Repo Subscribed"
         case .newRepoAnnouncement: "New Repository"
+        case .signingExpiry: "Signing Expiring"
         }
     }
 
@@ -144,6 +151,7 @@ extension NotificationType {
         case .assignedForReview, .assignedToTeamForReview, .changesApproved, .changesRequested, .changesDismissed, .myReviewDismissed: .reviews
         case .newStatus: .statuses
         case .newRepoSubscribed, .newRepoAnnouncement: .repositories
+        case .signingExpiry: .app
         }
     }
 
@@ -163,7 +171,7 @@ extension NotificationType {
         case .newStatus: "Statuses"
         case .issueClosed, .issueReopened, .newIssue, .newIssueAssigned,
              .newMention, .newPr, .newPrAssigned, .newRepoAnnouncement,
-             .newRepoSubscribed, .prClosed, .prMerged, .prReopened: nil
+             .newRepoSubscribed, .prClosed, .prMerged, .prReopened, .signingExpiry: nil
         }
     }
 }

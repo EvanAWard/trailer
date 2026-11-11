@@ -4,18 +4,20 @@ import Foundation
  Makes the sound that the user selected available to the notification centre.
 
  `UNNotificationSound` finds a file only in the `Library/Sounds` folder of the app data container, in
- the `Library/Sounds` folder of an app group container, or in the app bundle. The sounds that the
- preferences list live in `/System/Library/Sounds`, which is none of those, so the selected file is
- copied into the app group container before a notification asks for it.
+ the `Library/Sounds` folder of an app group container, or in the app bundle. The app is not sandboxed,
+ so its data container is the home folder. The sounds that the preferences list live in
+ `/System/Library/Sounds`, which is none of those, so the selected file is copied into the user's
+ `~/Library/Sounds` before a notification asks for it. Sounds copied there also show up in other apps'
+ sound lists.
  */
 enum NotificationSoundLibrary {
     /** The folder that holds the sounds which macOS supplies. */
     static let systemSoundsFolder = URL(fileURLWithPath: "/System/Library/Sounds", isDirectory: true)
 
-    /** The folder that the notification centre searches, or `nil` if the container is not available. */
+    /** The folder that the notification centre searches, or `nil` if the user Library folder is not available. */
     static let destinationFolder = FileManager.default
-        .containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier)?
-        .appendingPathComponent("Library", isDirectory: true)
+        .urls(for: .libraryDirectory, in: .userDomainMask)
+        .first?
         .appendingPathComponent("Sounds", isDirectory: true)
 
     /**
@@ -30,7 +32,7 @@ enum NotificationSoundLibrary {
             return false
         }
         guard let destinationFolder else {
-            Task { await Logging.shared.log("Notification sound '\(name)' not installed, no app group container") }
+            Task { await Logging.shared.log("Notification sound '\(name)' not installed, no user Library folder") }
             return false
         }
 

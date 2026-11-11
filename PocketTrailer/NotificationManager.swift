@@ -286,6 +286,10 @@ final class NotificationManager: NSObject {
             } else {
                 return
             }
+
+        case .signingExpiry:
+            // The app schedules this reminder itself. It is never posted for an item.
+            return
         }
 
         #if os(macOS)

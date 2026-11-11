@@ -175,6 +175,7 @@ final class NotificationSoundsPane: NSObject {
               let sound = sender.selectedItem?.representedObject as? NotificationSound else { return }
 
         Settings.setNotificationSound(sound, for: type)
+        NotificationCenter.default.post(name: .notificationSettingsChanged, object: type)
         // The preview reads the system folder directly, so install now to log a failure while the user is here.
         _ = sound.prepared()
         sound.play()
@@ -186,6 +187,7 @@ final class NotificationSoundsPane: NSObject {
 
         let enabled = sender.state == .on
         Settings.setNotificationEnabled(enabled, for: row.type)
+        NotificationCenter.default.post(name: .notificationSettingsChanged, object: row.type)
     }
 }
 
