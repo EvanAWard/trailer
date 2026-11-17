@@ -48,7 +48,12 @@ let appGroupIdentifier = "group.com.eaw.Trailer"
 
 let dataDirectoryName = "com.eaw.Trailer"
 
-nonisolated(unsafe) var keyVine = KeyVine(appIdentifier: "com.eaw.Trailer", teamId: "63VU3T7V3Q")
+#if os(macOS)
+    /** The macOS app keeps tokens in the login keychain, so it can be signed without a provisioning profile. */
+    nonisolated(unsafe) var keyVine = TokenKeychain(service: "com.eaw.Trailer")
+#else
+    nonisolated(unsafe) var keyVine = KeyVine(appIdentifier: "com.eaw.Trailer", teamId: "63VU3T7V3Q")
+#endif
 
 @MainActor var preferencesDirty = false
 @MainActor var lastRepoCheck = Date.distantPast

@@ -21,12 +21,12 @@ final class NotificationSoundsPane: NSObject {
     private static let listTopInset: CGFloat = 6
     private static let listBottomInset: CGFloat = 14
 
-    private var rows = [(type: NotificationType, popup: NSPopUpButton, checkbox: NSButton?)]()
+    private var rows = [(preference: NotificationPreference, popup: NSPopUpButton, checkbox: NSButton?)]()
 
     init(container: NSView) {
         super.init()
 
-        let typesByGroup = Dictionary(grouping: NotificationType.allCases, by: \.group)
+        let preferencesByGroup = Dictionary(grouping: NotificationPreference.all, by: \.group)
 
         var items = [NSView]()
         for group in NotificationType.Group.allCases {
@@ -35,8 +35,8 @@ final class NotificationSoundsPane: NSObject {
             heading.sizeToFit()
             items.append(heading)
 
-            for type in typesByGroup[group] ?? [] {
-                items.append(row(for: type))
+            for preference in preferencesByGroup[group] ?? [] {
+                items.append(row(for: preference))
             }
         }
 
@@ -84,10 +84,10 @@ final class NotificationSoundsPane: NSObject {
         let all: [NotificationSound] = [.systemDefault] + NotificationSound.systemSounds() + [.silent]
         let sharedChoices = all.map { (title: $0.title, sound: $0) }
 
-        for (type, popup, checkbox) in rows {
-            checkbox?.state = Settings.notificationEnabled(for: type) ? .on : .off
+        for (preference, popup, checkbox) in rows {
+            checkbox?.state = preference.isEnabled ? .on : .off
 
-            let current = Settings.notificationSound(for: type)
+            let current = preference.sound
             var choices = sharedChoices
             if !choices.contains(where: { $0.sound == current }) {
                 // An OS update removed the file. Keep the name, so the row still shows the selection.
@@ -143,8 +143,8 @@ final class NotificationSoundsPane: NSObject {
         ])
     }
 
-    private func row(for type: NotificationType) -> NSView {
-        let label = NSTextField(labelWithString: type.title)
+    private func row(for preference: NotificationPreference) -> NSView {
+        let label = NSTextField(labelWithString: preference.title)
         label.alignment = .right
 
         let popup = NSPopUpButton(frame: .zero, pullsDown: false)
@@ -154,29 +154,30 @@ final class NotificationSoundsPane: NSObject {
         // A kind that another tab controls names that tab in place of the checkbox.
         let trailing: NSView
         let checkbox: NSButton?
-        if let controlTabName = type.controlTabName {
+        if let controlTabName = preference.controlTabName {
             trailing = NotificationSoundsPane.secondaryLabel("\(controlTabName) tab")
             checkbox = nil
         } else {
             let button = NSButton(checkboxWithTitle: "", target: self, action: #selector(enabledToggled))
-            button.setAccessibilityLabel(type.title)
+            button.setAccessibilityLabel(preference.title)
             trailing = button
             checkbox = button
         }
 
-        rows.append((type, popup, checkbox))
+        rows.append((preference, popup, checkbox))
 
         return NotificationSoundsPane.columnRow([label, popup, trailing])
     }
 
     @objc
     private func soundSelected(_ sender: NSPopUpButton) {
-        guard let type = rows.first(where: { $0.popup === sender })?.type,
+        guard let preference = rows.first(where: { $0.popup === sender })?.preference,
               let sound = sender.selectedItem?.representedObject as? NotificationSound else { return }
 
-        Settings.setNotificationSound(sound, for: type)
+        preference.sound = sound
         // The preview reads the system folder directly, so install now to log a failure while the user is here.
         _ = sound.prepared()
+        NotificationSound.removeUnusedCopies()
         sound.play()
     }
 
@@ -184,8 +185,7 @@ final class NotificationSoundsPane: NSObject {
     private func enabledToggled(_ sender: NSButton) {
         guard let row = rows.first(where: { $0.checkbox === sender }) else { return }
 
-        let enabled = sender.state == .on
-        Settings.setNotificationEnabled(enabled, for: row.type)
+        row.preference.isEnabled = sender.state == .on
     }
 }
 
